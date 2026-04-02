@@ -1,0 +1,252 @@
+const { Student } = require('../../models/User');
+const Branch = require('../../models/Branch');
+const FinalGrade = require('../../models/FinalGrade');
+const TimetablePDF = require('../../models/TimetablePDF');
+const { cloudinary } = require('../utils/cloudinary.utils');
+const bcrypt = require('bcrypt');
+
+const getStudentGrades = async (req, res) => {
+  const user_role = req.user_role;
+  const { studentId } = req.params;
+
+  try {
+    if (user_role !== 'Admin') {
+      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
+    }
+
+    const student = await Student.findById(studentId).lean();
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    const branchDoc = await Branch.findOne({
+      code: student.branchCode,
+      semesterNumber: student.currentSemester
+    }).populate('courses', 'name code').lean();
+
+    if (!branchDoc || branchDoc.courses.length === 0) {
+      return res.status(200).json({
+        success: true,
+        student: { id: student._id, name: student.name, enrollmentNo: student.enrollmentNo },
+        grades: []
+      });
+    }
+
+    const courseIds = branchDoc.courses.map(c => c._id);
+
+    const grades = await FinalGrade.find({
+      studentId,
+      courseId: { $in: courseIds }
+    })
+      .populate('courseId', 'name code')
+      .lean();
+
+    const result = grades.map(g => ({
+      gradeId: g._id,
+      course: { id: g.courseId._id, name: g.courseId.name, code: g.courseId.code },
+      rollNumber: g.rollNumber,
+      percentage: g.percentage,
+      grade: g.grade,
+      branchCode: g.branchCode
+    }));
+
+    return res.status(200).json({
+      success: true,
+      student: { id: student._id, name: student.name, enrollmentNo: student.enrollmentNo },
+      grades: result
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Some internal server error' });
+  }
+};
+
+const editStudentGrade = async (req, res) => {
+  const user_role = req.user_role;
+  const { gradeId } = req.params;
+  const { percentage, grade, rollNumber } = req.body;
+
+  try {
+    if (user_role !== 'Admin') {
+      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
+    }
+
+    const updates = {};
+    if (percentage !== undefined) updates.percentage = percentage;
+    if (grade !== undefined) updates.grade = grade;
+    if (rollNumber !== undefined) updates.rollNumber = rollNumber;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields provided to update' });
+    }
+
+    const updated = await FinalGrade.findByIdAndUpdate(
+      gradeId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).populate('courseId', 'name code').lean();
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Grade record not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Grade updated successfully',
+      grade: {
+        gradeId: updated._id,
+        course: { id: updated.courseId._id, name: updated.courseId.name, code: updated.courseId.code },
+        rollNumber: updated.rollNumber,
+        percentage: updated.percentage,
+        grade: updated.grade,
+        branchCode: updated.branchCode
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Some internal server error' });
+  }
+};
+
+const uploadTimetable = async (req, res) => {
+  const user_id = req.user_id;
+  const user_role = req.user_role;
+
+  try {
+    if (user_role !== 'Admin') {
+      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
+    }
+
+    const timetable = new TimetablePDF({
+      uploadedBy: user_id,
+      cloudinaryUrl: req.file.path,
+      cloudinaryPublicId: req.file.filename,
+      originalName: req.file.originalname
+    });
+
+    await timetable.save();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Timetable uploaded successfully',
+      timetable: { id: timetable._id, url: timetable.cloudinaryUrl, uploadedAt: timetable.createdAt }
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Some internal server error' });
+  }
+};
+
+const getTimetables = async (req, res) => {
+  const user_role = req.user_role;
+
+  try {
+    if (user_role !== 'Admin') {
+      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
+    }
+
+    const timetables = await TimetablePDF.find().sort({ createdAt: -1 }).lean();
+
+    return res.status(200).json({ success: true, timetables });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Some internal server error' });
+  }
+};
+
+const deleteTimetable = async (req, res) => {
+  const user_role = req.user_role;
+  const { timetableId } = req.params;
+
+  try {
+    if (user_role !== 'Admin') {
+      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
+    }
+
+    const timetable = await TimetablePDF.findById(timetableId);
+    if (!timetable) {
+      return res.status(404).json({ success: false, message: 'Timetable not found' });
+    }
+
+    await cloudinary.uploader.destroy(timetable.cloudinaryPublicId, { resource_type: 'raw' });
+    await TimetablePDF.findByIdAndDelete(timetableId);
+
+    return res.status(200).json({ success: true, message: 'Timetable deleted successfully' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Some internal server error' });
+  }
+};
+
+const addStudent = async (req, res) => {
+  const user_role = req.user_role;
+  const { name, email, password, enrollmentNo, batchYear, degree, branchCode, currentSemester } = req.body;
+
+  try {
+    if (user_role !== 'Admin') {
+      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const student = new Student({
+      name,
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      enrollmentNo,
+      batchYear,
+      degree,
+      branchCode: branchCode.toUpperCase(),
+      currentSemester
+    });
+
+    await student.save();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Student added successfully',
+      student: {
+        id: student._id,
+        name: student.name,
+        email: student.email,
+        enrollmentNo: student.enrollmentNo,
+        branchCode: student.branchCode,
+        currentSemester: student.currentSemester
+      }
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Email or enrollment number already exists' });
+    }
+    return res.status(500).json({ success: false, message: 'Some internal server error' });
+  }
+};
+
+const removeStudent = async (req, res) => {
+  const user_role = req.user_role;
+  const { studentId } = req.params;
+
+  try {
+    if (user_role !== 'Admin') {
+      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
+    }
+
+    const student = await Student.findByIdAndDelete(studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    return res.status(200).json({ success: true, message: 'Student removed successfully' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Some internal server error' });
+  }
+};
+
+module.exports = {
+  addStudent,
+  removeStudent,
+  getStudentGrades,
+  editStudentGrade,
+  uploadTimetable,
+  getTimetables,
+  deleteTimetable
+};
