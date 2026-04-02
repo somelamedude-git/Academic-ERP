@@ -5,12 +5,8 @@ const mongoose = require('mongoose');
 const log = require('../utils/logger.utils');
 
 const assignGrades = async (req, res) => {
-  const user_role = req.user_role;
   const { studentId, courseId, branchCode, rollNumber, percentage, grade } = req.body;
 
-  if (user_role !== 'Faculty') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
   if (!studentId || !courseId || !branchCode || !grade) {
     return res.status(400).json({ success: false, message: 'studentId, courseId, branchCode and grade are required' });
   }
@@ -34,11 +30,6 @@ const assignGrades = async (req, res) => {
 
 const getMyGrades = async (req, res) => {
   const user_id = req.user_id;
-  const user_role = req.user_role;
-
-  if (user_role !== 'Student') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
 
   try {
     const student = await Student.findById(user_id).lean();

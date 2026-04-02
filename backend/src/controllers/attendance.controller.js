@@ -6,8 +6,6 @@ const log = require('../utils/logger.utils');
 const markAttendance = async (req, res) => {
   const user_id = req.user_id;
   const { studentList, courseId, date } = req.body;
-
-  if (!studentList || studentList.length === 0) {
     return res.status(400).json({ success: false, message: 'studentList is required' });
   }
   if (!courseId || !date) {

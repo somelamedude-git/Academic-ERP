@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth.middleware');
+const { authenticate, requireRole } = require('../middleware/auth.middleware');
 const { createCourse, deleteCourse, addCourseToBranch, removeCourseFromBranch, getCourses } = require('../controllers/course.controller');
 
 router.use(authenticate);
 
 router.get('/', getCourses);
-router.post('/', createCourse);
-router.delete('/:courseId', deleteCourse);
-router.post('/branch/add', addCourseToBranch);
-router.post('/branch/remove', removeCourseFromBranch);
+router.post('/', requireRole('Admin'), createCourse);
+router.delete('/:courseId', requireRole('Admin'), deleteCourse);
+router.post('/branch/add', requireRole('Admin'), addCourseToBranch);
+router.post('/branch/remove', requireRole('Admin'), removeCourseFromBranch);
 
 module.exports = router;

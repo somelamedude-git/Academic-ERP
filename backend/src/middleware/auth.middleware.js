@@ -18,4 +18,11 @@ const authenticate = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate };
+const requireRole = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user_role)) {
+    return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
+  }
+  next();
+};
+
+module.exports = { authenticate, requireRole };

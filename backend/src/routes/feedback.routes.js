@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth.middleware');
+const { authenticate, requireRole } = require('../middleware/auth.middleware');
 const { submitFeedback, getFeedback, submitComplaint } = require('../controllers/feedback.controller');
 
 router.use(authenticate);
 
-router.post('/feedback', submitFeedback);
-router.get('/feedback', getFeedback);
-router.post('/complaint', submitComplaint);
+router.post('/feedback', requireRole('Student'), submitFeedback);
+router.get('/feedback', requireRole('Faculty'), getFeedback);
+router.post('/complaint', requireRole('Student'), submitComplaint);
 
 module.exports = router;

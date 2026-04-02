@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth.middleware');
+const { authenticate, requireRole } = require('../middleware/auth.middleware');
 const { uploadAssignment, uploadSubmission } = require('../utils/cloudinary.utils');
 const { createAssignment, deleteAssignment, getCourseAssignments, submitAssignment, getAssignmentSubmissions } = require('../controllers/assignment.controller');
 
 router.use(authenticate);
 
-router.post('/', uploadAssignment.single('file'), createAssignment);
-router.delete('/:assignmentId', deleteAssignment);
+router.post('/', requireRole('Faculty'), uploadAssignment.single('file'), createAssignment);
+router.delete('/:assignmentId', requireRole('Faculty'), deleteAssignment);
 router.get('/course/:courseId', getCourseAssignments);
-router.post('/:assignmentId/submit', uploadSubmission.single('file'), submitAssignment);
-router.get('/:assignmentId/submissions', getAssignmentSubmissions);
+router.post('/:assignmentId/submit', requireRole('Student'), uploadSubmission.single('file'), submitAssignment);
+router.get('/:assignmentId/submissions', requireRole('Faculty'), getAssignmentSubmissions);
 
 module.exports = router;

@@ -8,12 +8,8 @@ const mongoose = require('mongoose');
 const log = require('../utils/logger.utils');
 
 const getStudentGrades = async (req, res) => {
-  const user_role = req.user_role;
   const { studentId } = req.params;
 
-  if (user_role !== 'Admin') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
   if (!mongoose.Types.ObjectId.isValid(studentId)) {
     return res.status(400).json({ success: false, message: 'Invalid studentId' });
   }
@@ -62,13 +58,9 @@ const getStudentGrades = async (req, res) => {
 };
 
 const editStudentGrade = async (req, res) => {
-  const user_role = req.user_role;
   const { gradeId } = req.params;
   const { percentage, grade, rollNumber } = req.body;
 
-  if (user_role !== 'Admin') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
   if (!mongoose.Types.ObjectId.isValid(gradeId)) {
     return res.status(400).json({ success: false, message: 'Invalid gradeId' });
   }
@@ -110,11 +102,7 @@ const editStudentGrade = async (req, res) => {
 
 const uploadTimetable = async (req, res) => {
   const user_id = req.user_id;
-  const user_role = req.user_role;
 
-  if (user_role !== 'Admin') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
   }
@@ -140,12 +128,6 @@ const uploadTimetable = async (req, res) => {
 };
 
 const getTimetables = async (req, res) => {
-  const user_role = req.user_role;
-
-  if (user_role !== 'Admin') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
-
   try {
     const timetables = await TimetablePDF.find().sort({ createdAt: -1 }).lean();
     return res.status(200).json({ success: true, timetables });
@@ -156,12 +138,8 @@ const getTimetables = async (req, res) => {
 };
 
 const deleteTimetable = async (req, res) => {
-  const user_role = req.user_role;
   const { timetableId } = req.params;
 
-  if (user_role !== 'Admin') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
   if (!mongoose.Types.ObjectId.isValid(timetableId)) {
     return res.status(400).json({ success: false, message: 'Invalid timetableId' });
   }
@@ -182,12 +160,8 @@ const deleteTimetable = async (req, res) => {
 };
 
 const addStudent = async (req, res) => {
-  const user_role = req.user_role;
   const { name, email, password, enrollmentNo, batchYear, degree, branchCode, currentSemester } = req.body;
 
-  if (user_role !== 'Admin') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
   if (!name || !email || !password || !enrollmentNo || !batchYear || !degree || !branchCode || !currentSemester) {
     return res.status(400).json({ success: false, message: 'All fields are required' });
   }
@@ -228,12 +202,8 @@ const addStudent = async (req, res) => {
 };
 
 const removeStudent = async (req, res) => {
-  const user_role = req.user_role;
   const { studentId } = req.params;
 
-  if (user_role !== 'Admin') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
   if (!mongoose.Types.ObjectId.isValid(studentId)) {
     return res.status(400).json({ success: false, message: 'Invalid studentId' });
   }
