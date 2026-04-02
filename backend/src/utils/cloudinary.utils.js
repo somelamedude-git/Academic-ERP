@@ -43,7 +43,7 @@ const uploadPDF = multer({
 
 const uploadMaterial = multer({
   storage: materialStorage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for PPTs
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = [ALLOWED_PDF_MIME, ...ALLOWED_PPT_MIMES];
     allowed.includes(file.mimetype)
@@ -52,4 +52,19 @@ const uploadMaterial = multer({
   }
 });
 
-module.exports = { uploadPDF, uploadMaterial, cloudinary };
+const assignmentStorage = new CloudinaryStorage({
+  cloudinary,
+  params: { folder: 'assignments', resource_type: 'raw', format: 'pdf' }
+});
+
+const uploadAssignment = multer({
+  storage: assignmentStorage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    file.mimetype === ALLOWED_PDF_MIME
+      ? cb(null, true)
+      : cb(new Error('Only PDF files are allowed'), false);
+  }
+});
+
+module.exports = { uploadPDF, uploadMaterial, uploadAssignment, cloudinary };
