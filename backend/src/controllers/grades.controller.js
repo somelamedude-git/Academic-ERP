@@ -1,25 +1,34 @@
 const FinalGrade = require('../../models/FinalGrade');
 const Branch = require('../../models/Branch');
 const { Student } = require('../../models/User');
+const mongoose = require('mongoose');
+const log = require('../utils/logger.utils');
 
 const assignGrades = async (req, res) => {
   const user_role = req.user_role;
   const { studentId, courseId, branchCode, rollNumber, percentage, grade } = req.body;
 
-  try {
-    if (user_role !== 'Faculty') {
-      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
-    }
+  if (user_role !== 'Faculty') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  if (!studentId || !courseId || !branchCode || !grade) {
+    return res.status(400).json({ success: false, message: 'studentId, courseId, branchCode and grade are required' });
+  }
+  if (!mongoose.Types.ObjectId.isValid(studentId) || !mongoose.Types.ObjectId.isValid(courseId)) {
+    return res.status(400).json({ success: false, message: 'Invalid studentId or courseId' });
+  }
 
+  try {
     const result = await FinalGrade.findOneAndUpdate(
       { studentId, courseId },
       { $set: { branchCode, rollNumber, percentage, grade } },
       { upsert: true, new: true, runValidators: true }
     );
-
+    log.info('Grade assigned', { studentId, courseId });
     return res.status(200).json({ success: true, message: 'Grade assigned successfully', grade: result });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Some internal server error' });
+    log.error('assignGrades failed', err, { studentId, courseId });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -27,11 +36,11 @@ const getMyGrades = async (req, res) => {
   const user_id = req.user_id;
   const user_role = req.user_role;
 
-  try {
-    if (user_role !== 'Student') {
-      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
-    }
+  if (user_role !== 'Student') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
 
+  try {
     const student = await Student.findById(user_id).lean();
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
@@ -47,11 +56,8 @@ const getMyGrades = async (req, res) => {
     }
 
     const courseIds = branchDoc.courses.map(c => c._id);
-
-    const grades = await FinalGrade.find({
-      studentId: user_id,
-      courseId: { $in: courseIds }
-    }).populate('courseId', 'name code').lean();
+    const grades = await FinalGrade.find({ studentId: user_id, courseId: { $in: courseIds } })
+      .populate('courseId', 'name code').lean();
 
     const gradeMap = {};
     for (const g of grades) {
@@ -71,7 +77,8 @@ const getMyGrades = async (req, res) => {
 
     return res.status(200).json({ success: true, grades: result });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Some internal server error' });
+    log.error('getMyGrades failed', err, { studentId: user_id });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 

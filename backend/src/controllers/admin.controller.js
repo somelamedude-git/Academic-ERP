@@ -4,16 +4,21 @@ const FinalGrade = require('../../models/FinalGrade');
 const TimetablePDF = require('../../models/TimetablePDF');
 const { cloudinary } = require('../utils/cloudinary.utils');
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
+const log = require('../utils/logger.utils');
 
 const getStudentGrades = async (req, res) => {
   const user_role = req.user_role;
   const { studentId } = req.params;
 
-  try {
-    if (user_role !== 'Admin') {
-      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
-    }
+  if (user_role !== 'Admin') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  if (!mongoose.Types.ObjectId.isValid(studentId)) {
+    return res.status(400).json({ success: false, message: 'Invalid studentId' });
+  }
 
+  try {
     const student = await Student.findById(studentId).lean();
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
@@ -33,13 +38,8 @@ const getStudentGrades = async (req, res) => {
     }
 
     const courseIds = branchDoc.courses.map(c => c._id);
-
-    const grades = await FinalGrade.find({
-      studentId,
-      courseId: { $in: courseIds }
-    })
-      .populate('courseId', 'name code')
-      .lean();
+    const grades = await FinalGrade.find({ studentId, courseId: { $in: courseIds } })
+      .populate('courseId', 'name code').lean();
 
     const result = grades.map(g => ({
       gradeId: g._id,
@@ -56,7 +56,8 @@ const getStudentGrades = async (req, res) => {
       grades: result
     });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Some internal server error' });
+    log.error('getStudentGrades failed', err, { studentId });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -65,25 +66,25 @@ const editStudentGrade = async (req, res) => {
   const { gradeId } = req.params;
   const { percentage, grade, rollNumber } = req.body;
 
+  if (user_role !== 'Admin') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  if (!mongoose.Types.ObjectId.isValid(gradeId)) {
+    return res.status(400).json({ success: false, message: 'Invalid gradeId' });
+  }
+
+  const updates = {};
+  if (percentage !== undefined) updates.percentage = percentage;
+  if (grade !== undefined) updates.grade = grade;
+  if (rollNumber !== undefined) updates.rollNumber = rollNumber;
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ success: false, message: 'No fields provided to update' });
+  }
+
   try {
-    if (user_role !== 'Admin') {
-      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
-    }
-
-    const updates = {};
-    if (percentage !== undefined) updates.percentage = percentage;
-    if (grade !== undefined) updates.grade = grade;
-    if (rollNumber !== undefined) updates.rollNumber = rollNumber;
-
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ success: false, message: 'No fields provided to update' });
-    }
-
-    const updated = await FinalGrade.findByIdAndUpdate(
-      gradeId,
-      { $set: updates },
-      { new: true, runValidators: true }
-    ).populate('courseId', 'name code').lean();
+    const updated = await FinalGrade.findByIdAndUpdate(gradeId, { $set: updates }, { new: true, runValidators: true })
+      .populate('courseId', 'name code').lean();
 
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Grade record not found' });
@@ -102,7 +103,8 @@ const editStudentGrade = async (req, res) => {
       }
     });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Some internal server error' });
+    log.error('editStudentGrade failed', err, { gradeId });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -110,47 +112,46 @@ const uploadTimetable = async (req, res) => {
   const user_id = req.user_id;
   const user_role = req.user_role;
 
+  if (user_role !== 'Admin') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
+  }
+
   try {
-    if (user_role !== 'Admin') {
-      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
-    }
-
     const timetable = new TimetablePDF({
       uploadedBy: user_id,
       cloudinaryUrl: req.file.path,
       cloudinaryPublicId: req.file.filename,
       originalName: req.file.originalname
     });
-
     await timetable.save();
-
+    log.info('Timetable uploaded', { timetableId: timetable._id, uploadedBy: user_id });
     return res.status(201).json({
       success: true,
       message: 'Timetable uploaded successfully',
       timetable: { id: timetable._id, url: timetable.cloudinaryUrl, uploadedAt: timetable.createdAt }
     });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Some internal server error' });
+    log.error('uploadTimetable failed', err, { uploadedBy: user_id });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
 const getTimetables = async (req, res) => {
   const user_role = req.user_role;
 
+  if (user_role !== 'Admin') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+
   try {
-    if (user_role !== 'Admin') {
-      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
-    }
-
     const timetables = await TimetablePDF.find().sort({ createdAt: -1 }).lean();
-
     return res.status(200).json({ success: true, timetables });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Some internal server error' });
+    log.error('getTimetables failed', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -158,22 +159,25 @@ const deleteTimetable = async (req, res) => {
   const user_role = req.user_role;
   const { timetableId } = req.params;
 
-  try {
-    if (user_role !== 'Admin') {
-      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
-    }
+  if (user_role !== 'Admin') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  if (!mongoose.Types.ObjectId.isValid(timetableId)) {
+    return res.status(400).json({ success: false, message: 'Invalid timetableId' });
+  }
 
+  try {
     const timetable = await TimetablePDF.findById(timetableId);
     if (!timetable) {
       return res.status(404).json({ success: false, message: 'Timetable not found' });
     }
-
     await cloudinary.uploader.destroy(timetable.cloudinaryPublicId, { resource_type: 'raw' });
     await TimetablePDF.findByIdAndDelete(timetableId);
-
+    log.info('Timetable deleted', { timetableId });
     return res.status(200).json({ success: true, message: 'Timetable deleted successfully' });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Some internal server error' });
+    log.error('deleteTimetable failed', err, { timetableId });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -181,13 +185,15 @@ const addStudent = async (req, res) => {
   const user_role = req.user_role;
   const { name, email, password, enrollmentNo, batchYear, degree, branchCode, currentSemester } = req.body;
 
+  if (user_role !== 'Admin') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  if (!name || !email || !password || !enrollmentNo || !batchYear || !degree || !branchCode || !currentSemester) {
+    return res.status(400).json({ success: false, message: 'All fields are required' });
+  }
+
   try {
-    if (user_role !== 'Admin') {
-      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const student = new Student({
       name,
       email: email.toLowerCase().trim(),
@@ -198,9 +204,8 @@ const addStudent = async (req, res) => {
       branchCode: branchCode.toUpperCase(),
       currentSemester
     });
-
     await student.save();
-
+    log.info('Student added', { studentId: student._id, enrollmentNo });
     return res.status(201).json({
       success: true,
       message: 'Student added successfully',
@@ -217,7 +222,8 @@ const addStudent = async (req, res) => {
     if (err.code === 11000) {
       return res.status(400).json({ success: false, message: 'Email or enrollment number already exists' });
     }
-    return res.status(500).json({ success: false, message: 'Some internal server error' });
+    log.error('addStudent failed', err, { enrollmentNo });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -225,28 +231,24 @@ const removeStudent = async (req, res) => {
   const user_role = req.user_role;
   const { studentId } = req.params;
 
-  try {
-    if (user_role !== 'Admin') {
-      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
-    }
+  if (user_role !== 'Admin') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  if (!mongoose.Types.ObjectId.isValid(studentId)) {
+    return res.status(400).json({ success: false, message: 'Invalid studentId' });
+  }
 
+  try {
     const student = await Student.findByIdAndDelete(studentId);
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
-
+    log.info('Student removed', { studentId });
     return res.status(200).json({ success: true, message: 'Student removed successfully' });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Some internal server error' });
+    log.error('removeStudent failed', err, { studentId });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
-module.exports = {
-  addStudent,
-  removeStudent,
-  getStudentGrades,
-  editStudentGrade,
-  uploadTimetable,
-  getTimetables,
-  deleteTimetable
-};
+module.exports = { addStudent, removeStudent, getStudentGrades, editStudentGrade, uploadTimetable, getTimetables, deleteTimetable };
