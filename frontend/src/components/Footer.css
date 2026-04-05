@@ -1,0 +1,118 @@
+.app-footer {
+  width: 100%;
+  margin-top: 24px;
+  background: linear-gradient(135deg, #0d2334 0%, #17324d 42%, #0f5d53 100%);
+  color: #e8f2f0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-footer__inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 34px 22px 18px;
+}
+
+.app-footer__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 20px;
+  padding-bottom: 18px;
+}
+
+.app-footer__eyebrow {
+  display: inline-flex;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(240, 178, 82, 0.18);
+  color: #ffd08f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-footer__block h3,
+.app-footer__block h4 {
+  margin: 0 0 10px;
+  color: #f8fbfa;
+  letter-spacing: 0.01em;
+}
+
+.app-footer__block h3 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.2rem;
+}
+
+.app-footer__block h4 {
+  font-size: 0.94rem;
+}
+
+.app-footer__block p {
+  margin: 0;
+  color: rgba(232, 242, 240, 0.78);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.app-footer__address {
+  margin-top: 14px;
+  color: rgba(232, 242, 240, 0.6);
+}
+
+.app-footer__block ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.app-footer__block a {
+  color: rgba(232, 242, 240, 0.82);
+  font-size: 0.86rem;
+}
+
+.app-footer__block a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.app-footer__bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.app-footer__copy,
+.app-footer__hours {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(232, 242, 240, 0.6);
+}
+
+@media (max-width: 980px) {
+  .app-footer__grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .app-footer__inner {
+    padding: 22px 14px 12px;
+  }
+
+  .app-footer__grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .app-footer__bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
