@@ -1,0 +1,350 @@
+:root {
+  --tt-bg: #f0f2f7;
+  --tt-card: #ffffff;
+  --tt-grid: #e5e7eb;
+  --tt-text: #192132;
+  --tt-muted: #64748b;
+  --tt-brand: #2468f2;
+  --tt-brand-soft: #e5eeff;
+}
+
+.tt-page {
+  min-height: 100vh;
+  width: 100%;
+  background: radial-gradient(circle at top left, #f8fbff 0%, var(--tt-bg) 55%);
+}
+
+.tt-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 22px 40px;
+}
+
+.tt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(23, 50, 77, 0.08);
+  box-shadow: 0 18px 42px rgba(19, 33, 51, 0.08);
+}
+
+.tt-header h1 {
+  margin: 0;
+  color: var(--tt-text);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 2.5rem;
+  letter-spacing: -0.04em;
+}
+
+.tt-header p {
+  margin: 6px 0 0;
+  color: var(--tt-muted);
+  font-size: 0.95rem;
+}
+
+.tt-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tt-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tt-nav-btn {
+  border: 1px solid #dbe3ef;
+  background: #fff;
+  color: #27364d;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tt-nav-btn:hover {
+  background: #f8fafc;
+}
+
+.tt-nav-btn--today {
+  color: #1d4ed8;
+}
+
+.tt-view-badge {
+  background: var(--tt-card);
+  color: var(--tt-text);
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  padding: 8px 14px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(16, 24, 40, 0.05);
+}
+
+.tt-muted {
+  color: var(--tt-muted);
+}
+
+.tt-error {
+  color: #b91c1c;
+  background: #fee2e2;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.tt-calendar-shell {
+  background: var(--tt-card);
+  border: 1px solid #dbe3ef;
+  border-radius: 24px;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.tt-calendar-header-row {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  border-bottom: 1px solid var(--tt-grid);
+}
+
+.tt-time-header {
+  padding: 12px;
+  color: var(--tt-muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+  border-right: 1px solid var(--tt-grid);
+  background: #f8fafc;
+}
+
+.tt-day-headers {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+}
+
+.tt-day-header-cell {
+  padding: 12px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  color: #334155;
+  font-size: 0.84rem;
+  font-weight: 600;
+  border-right: 1px solid var(--tt-grid);
+  background: #f8fafc;
+}
+
+.tt-day-header-cell:last-child {
+  border-right: none;
+}
+
+.tt-day-header-cell span {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.tt-day-header-cell--today {
+  background: #eef4ff;
+}
+
+.tt-day-header-cell--today span {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.tt-calendar-body {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  overflow-y: auto;
+}
+
+.tt-time-column {
+  border-right: 1px solid var(--tt-grid);
+  background: #fbfcfe;
+}
+
+.tt-time-slot {
+  border-bottom: 1px solid var(--tt-grid);
+  color: var(--tt-muted);
+  font-size: 0.74rem;
+  padding: 6px 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.tt-day-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+}
+
+.tt-day-column {
+  position: relative;
+  border-right: 1px solid var(--tt-grid);
+}
+
+.tt-day-column:last-child {
+  border-right: none;
+}
+
+.tt-day-column--today {
+  background: #f8fbff;
+}
+
+.tt-hour-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--tt-grid);
+}
+
+.tt-event {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  padding: 10px 10px;
+  background: linear-gradient(160deg, var(--tt-brand-soft), #f7faff);
+  border: 1px solid #c8d9ff;
+  border-left: 5px solid var(--tt-brand);
+  border-radius: 14px;
+  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.14);
+  overflow: hidden;
+}
+
+.tt-event-time {
+  margin: 0 0 3px;
+  font-size: 0.72rem;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.tt-event h4 {
+  margin: 0;
+  font-size: 0.83rem;
+  color: var(--tt-text);
+  line-height: 1.2;
+}
+
+.tt-event span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.tt-event-attendance {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.tt-mobile-list {
+  display: none;
+  margin-top: 14px;
+  gap: 14px;
+}
+
+.tt-mobile-day-card {
+  background: var(--tt-card);
+  border-radius: 18px;
+  border: 1px solid #dbe3ef;
+  padding: 16px;
+}
+
+.tt-mobile-day-card h3 {
+  margin: 0 0 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--tt-text);
+  font-size: 1rem;
+}
+
+.tt-mobile-day-card h3 span {
+  font-size: 0.84rem;
+  color: var(--tt-muted);
+  font-weight: 600;
+}
+
+.tt-mobile-day-card--today {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
+.tt-mobile-day-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.tt-mobile-day-card li {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.tt-mobile-day-card li strong {
+  color: #1d4ed8;
+  font-size: 0.83rem;
+}
+
+.tt-mobile-day-card li p {
+  margin: 4px 0;
+  color: var(--tt-text);
+}
+
+.tt-mobile-day-card li span {
+  color: var(--tt-muted);
+  font-size: 0.83rem;
+}
+
+.tt-mobile-attendance {
+  display: block;
+  margin-top: 4px;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tt-empty {
+  color: var(--tt-muted);
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .tt-container {
+    padding: 20px 14px 32px;
+  }
+
+  .tt-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+  }
+
+  .tt-header-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .tt-calendar-shell {
+    display: none;
+  }
+
+  .tt-mobile-list {
+    display: grid;
+  }
+}
