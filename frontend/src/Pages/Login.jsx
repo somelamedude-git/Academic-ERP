@@ -2,19 +2,17 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../Styles/Login.css";
 import { getDashboardPathForRole, getStoredRole, saveAuth } from "../auth/auth.js";
+import { login as apiLogin } from "../Services/api.js";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [role, setRole] = useState("student");
-  const [form, setForm] = useState({
-    email: "",
-    password: ""
-  });
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const storedRole = getStoredRole();
-
     if (storedRole) {
       navigate(getDashboardPathForRole(storedRole), { replace: true });
     }
@@ -24,27 +22,26 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    // Backend-ready payload (JWT-based)
-    const payload = {
-      role,
-      email: form.email,
-      password: form.password
-    };
+    try {
+      const data = await apiLogin(form.email, form.password);
+      const role = data.role.toLowerCase();
 
-    saveAuth({
-      role,
-      email: form.email
-    });
+      saveAuth({ role, email: form.email, accessToken: data.accessToken });
 
-    console.log("Login Payload:", payload);
-
-    const redirectPath = location.state?.from;
-    const roleDashboardPath = getDashboardPathForRole(role);
-    const nextPath = redirectPath?.startsWith(`/${role}`) ? redirectPath : roleDashboardPath;
-    navigate(nextPath, { replace: true });
+      const redirectPath = location.state?.from;
+      const roleDashboardPath = getDashboardPathForRole(role);
+      const nextPath = redirectPath?.startsWith(`/${role}`) ? redirectPath : roleDashboardPath;
+      navigate(nextPath, { replace: true });
+    } catch (err) {
+      setError(err.message || "Login failed. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,19 +80,6 @@ export default function Login() {
           <p>Use your institutional credentials to continue.</p>
         </div>
 
-        <div className="role-switch">
-          {["student", "faculty", "admin"].map((r) => (
-            <button
-              key={r}
-              type="button"
-              className={role === r ? "active" : ""}
-              onClick={() => setRole(r)}
-            >
-              {r.toUpperCase()}
-            </button>
-          ))}
-        </div>
-
         <form onSubmit={handleSubmit} className="login-form">
           <label>Email</label>
           <input
@@ -115,8 +99,10 @@ export default function Login() {
             onChange={handleChange}
           />
 
-          <button type="submit" className="login-btn">
-            Continue to Dashboard
+          {error && <p className="login-error">{error}</p>}
+
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? "Signing in..." : "Continue to Dashboard"}
           </button>
         </form>
 

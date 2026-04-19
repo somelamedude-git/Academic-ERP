@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import "../Styles/Assignment.css";
+import { getStudentAssignments } from "../Services/api.js";
 
 const STATUS_ORDER = ["Pending", "In Progress", "Submitted", "Overdue"];
 
@@ -19,15 +20,9 @@ const Assignment = () => {
       try {
         setLoading(true);
         setError("");
-
-        const response = await fetch("/student/assignments");
-        if (!response.ok) {
-          throw new Error(`Failed to load assignments (${response.status})`);
-        }
-
-        const data = await response.json();
+        const data = await getStudentAssignments();
         if (isMounted) {
-          setAssignments(Array.isArray(data) ? data : []);
+          setAssignments(Array.isArray(data.assignments) ? data.assignments : []);
         }
       } catch (err) {
         if (isMounted) {

@@ -1,6 +1,6 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import "./Navbar.css";
-import { getStoredRole } from "../auth/auth.js";
+import { clearAuth, getStoredRole } from "../auth/auth.js";
 
 const roleConfig = {
   student: {
@@ -10,12 +10,24 @@ const roleConfig = {
       { label: "Dashboard", to: "/student/dashboard" },
       { label: "Assignments", to: "/student/assignments" },
       { label: "Timetable", to: "/student/timetable" },
+      { label: "Grades", to: "/student/grades" },
+      { label: "Quizzes", to: "/student/quizzes" },
+      { label: "Materials", to: "/student/materials" },
+      { label: "Feedback", to: "/student/feedback" },
     ],
   },
   faculty: {
     label: "Faculty Workspace",
     note: "Classes, reviews, publishing",
-    links: [{ label: "Dashboard", to: "/faculty/dashboard" }],
+    links: [
+      { label: "Dashboard", to: "/faculty/dashboard" },
+      { label: "Assignments", to: "/faculty/assignments" },
+      { label: "Materials", to: "/faculty/materials" },
+      { label: "Attendance", to: "/faculty/attendance" },
+      { label: "Grades", to: "/faculty/grades" },
+      { label: "Quizzes", to: "/faculty/quizzes" },
+      { label: "Feedback", to: "/faculty/feedback" },
+    ],
   },
   admin: {
     label: "Admin Console",
@@ -23,6 +35,8 @@ const roleConfig = {
     links: [
       { label: "Dashboard", to: "/admin/dashboard" },
       { label: "Manage Users", to: "/admin/manage-users" },
+      { label: "Courses", to: "/admin/manage-courses" },
+      { label: "Timetable", to: "/admin/timetable" },
     ],
   },
   home: {
@@ -38,11 +52,13 @@ const roleConfig = {
 
 function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const path = location.pathname;
   const storedRole = getStoredRole();
   const isStudent = path.startsWith("/student") || storedRole === "student";
   const isFaculty = path.startsWith("/faculty") || storedRole === "faculty";
   const isAdmin = path.startsWith("/admin") || storedRole === "admin";
+  const isLoggedIn = Boolean(storedRole);
   const context = isStudent
     ? roleConfig.student
     : isFaculty
@@ -50,6 +66,11 @@ function Navbar() {
       : isAdmin
         ? roleConfig.admin
         : roleConfig.home;
+
+  const handleLogout = () => {
+    clearAuth();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <header className="navbar-shell">
@@ -86,9 +107,15 @@ function Navbar() {
                 {item.label}
               </NavLink>
             ))}
-          <NavLink to="/login" className="navbar-cta">
-            Secure Login
-          </NavLink>
+          {isLoggedIn ? (
+            <button type="button" onClick={handleLogout} className="navbar-cta navbar-cta--logout">
+              Logout
+            </button>
+          ) : (
+            <NavLink to="/login" className="navbar-cta">
+              Secure Login
+            </NavLink>
+          )}
         </div>
       </nav>
     </header>

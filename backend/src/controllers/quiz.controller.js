@@ -229,4 +229,15 @@ const submitQuiz = async (req, res) => {
   }
 };
 
-module.exports = { createQuiz, setVisibility, expireQuiz, getSubmissions, reviewAndDelete, getCourseQuizzes, submitQuiz };
+module.exports = { createQuiz, setVisibility, expireQuiz, getSubmissions, reviewAndDelete, getCourseQuizzes, submitQuiz, getFacultyQuizzes };
+
+async function getFacultyQuizzes(req, res) {
+  const user_id = req.user_id;
+  try {
+    const quizzes = await Quiz.find({ facultyId: user_id }).populate('courseId', 'name code').sort({ createdAt: -1 }).lean();
+    return res.status(200).json({ success: true, quizzes });
+  } catch (err) {
+    log.error('getFacultyQuizzes failed', err, { facultyId: user_id });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+}

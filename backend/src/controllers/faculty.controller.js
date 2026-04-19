@@ -1,4 +1,5 @@
 const CourseMaterial = require('../../models/CourseMaterial');
+const Course = require('../../models/Course');
 const { cloudinary } = require('../utils/cloudinary.utils');
 const mongoose = require('mongoose');
 const log = require('../utils/logger.utils');
@@ -116,4 +117,15 @@ const deleteMaterial = async (req, res) => {
   }
 };
 
-module.exports = { uploadMaterial, addExternalLink, getMaterials, deleteMaterial };
+const getMyCourses = async (req, res) => {
+  const user_id = req.user_id;
+  try {
+    const courses = await Course.find({ facultyId: user_id }).lean();
+    return res.status(200).json({ success: true, courses });
+  } catch (err) {
+    log.error('getMyCourses failed', err, { facultyId: user_id });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+module.exports = { uploadMaterial, addExternalLink, getMaterials, deleteMaterial, getMyCourses };

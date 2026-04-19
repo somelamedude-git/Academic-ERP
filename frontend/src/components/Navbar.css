@@ -146,3 +146,10 @@
     text-align: center;
   }
 }
+
+.navbar-cta--logout {
+  background: transparent;
+  border: 1.5px solid currentColor;
+  cursor: pointer;
+  font: inherit;
+}
