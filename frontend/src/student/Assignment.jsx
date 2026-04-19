@@ -294,7 +294,6 @@ const Assignment = () => {
           </div>
         </section>
 
-<<<<<<< HEAD
         <section className="as-summary-grid" aria-label="Assignment summary">
           <article className="as-summary-card">
             <span className="as-summary-icon as-summary-icon--total">A</span>

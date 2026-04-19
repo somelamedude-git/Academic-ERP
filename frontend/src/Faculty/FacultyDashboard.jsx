@@ -14,7 +14,7 @@ const quickLinks = [
   { label: "Feedback", to: "/faculty/feedback", note: "Read student feedback" },
 ];
 
-<<<<<<< HEAD
+
 const todaysSchedule = [
   { time: "09:00 AM", course: "Database Management Systems", room: "C-204" },
   { time: "11:00 AM", course: "Operating Systems", room: "Lab-3" },

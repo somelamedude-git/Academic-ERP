@@ -94,17 +94,6 @@ function Navbar() {
     navigate("/login", { replace: true });
   };
 
-  return (
-    <header className="navbar-shell">
-      <nav className="navbar">
-        <NavLink to="/" className="navbar-brand" aria-label="Academic ERP Home">
-          <span className="navbar-brand__mark">AE</span>
-          <span>
-            <strong>Academic ERP</strong>
-            <small>Institution Operations Suite</small>
-          </span>
-        </NavLink>
-
 
   return (
     <header className="nav-shell">

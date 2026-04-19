@@ -114,6 +114,7 @@ export default function Login() {
           <div className="login-bottom">
             <span>© Academic ERP System</span>
             <span>Protected access for authorized campus users</span>
+          </div>
         </div>
       </section>
     </div>
