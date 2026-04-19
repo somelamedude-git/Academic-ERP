@@ -6,59 +6,59 @@ import "../Styles/Home.css";
 
 const roleContent = {
   student: {
-    badge: "Student Home",
-    title: "Stay on top of classes, assignments, and attendance.",
+    badge: "Student Portal",
+    title: "Your academics, organized and on track.",
     description:
-      "The homepage should immediately help students reach the next academic task, not show unrelated promotional content.",
-    primaryAction: { label: "Open Student Dashboard", to: "/student/dashboard" },
+      "Access assignments, check attendance, view your timetable, and stay ahead of every deadline — all from one dashboard.",
+    primaryAction: { label: "Open Dashboard", to: "/student/dashboard" },
     secondaryAction: { label: "View Timetable", to: "/student/timetable" },
     metrics: [
-      { value: "84%", label: "Attendance", note: "Healthy academic standing this term" },
-      { value: "4", label: "Pending Tasks", note: "Assignments and submission checkpoints" },
-      { value: "3", label: "Classes Today", note: "Lectures and labs on your schedule" },
+      { value: "84%", label: "Attendance", note: "Current semester standing" },
+      { value: "4", label: "Pending Tasks", note: "Assignments due this week" },
+      { value: "3", label: "Classes Today", note: "Lectures and labs scheduled" },
     ],
     snapshot: [
-      { title: "Academic Standing", value: "On Track", detail: "Attendance and submissions are in a safe range" },
-      { title: "Upcoming Deadline", value: "24 hrs", detail: "Nearest assignment submission window" },
-      { title: "Weekly Load", value: "18 hrs", detail: "Total lecture and lab hours this week" },
+      { title: "Academic Standing", value: "On Track", detail: "Attendance and submissions healthy" },
+      { title: "Next Deadline", value: "24 hrs", detail: "Nearest assignment due" },
+      { title: "Weekly Load", value: "18 hrs", detail: "Total scheduled hours" },
     ],
     quickLinks: [
-      { title: "Dashboard", to: "/student/dashboard", note: "Overview, stats, announcements" },
-      { title: "Assignments", to: "/student/assignments", note: "Check pending and submitted work" },
-      { title: "Timetable", to: "/student/timetable", note: "Track today and weekly schedule" },
+      { title: "Dashboard", to: "/student/dashboard", note: "Stats, schedule, announcements" },
+      { title: "Assignments", to: "/student/assignments", note: "Track submissions and progress" },
+      { title: "Timetable", to: "/student/timetable", note: "Weekly class calendar" },
     ],
     priorities: [
       { title: "Complete DBMS assignment", meta: "Due tomorrow, 11:59 PM" },
       { title: "Review attendance trend", meta: "Check subjects that need attention" },
-      { title: "Read new faculty notices", meta: "Stay updated on reschedules and announcements" },
+      { title: "Read new faculty notices", meta: "Stay updated on changes" },
     ],
   },
   faculty: {
-    badge: "Faculty Home",
-    title: "Manage teaching work, reviews, and classroom coordination.",
+    badge: "Faculty Portal",
+    title: "Teaching workflows, simplified.",
     description:
-      "Faculty home should prioritize operational tasks like teaching plans, review queues, and course progress from the first screen.",
-    primaryAction: { label: "Open Faculty Dashboard", to: "/faculty/dashboard" },
-    secondaryAction: { label: "Go to Secure Login", to: "/login" },
+      "Manage courses, review student submissions, track class progress, and stay on top of academic responsibilities.",
+    primaryAction: { label: "Open Dashboard", to: "/faculty/dashboard" },
+    secondaryAction: { label: "Secure Login", to: "/login" },
     metrics: [
-      { value: "3", label: "Classes Today", note: "Two lectures and one lab session" },
+      { value: "3", label: "Classes Today", note: "Two lectures, one lab" },
       { value: "18", label: "Pending Reviews", note: "Assignments awaiting feedback" },
-      { value: "4", label: "Active Courses", note: "Current teaching responsibilities" },
+      { value: "4", label: "Active Courses", note: "Current teaching load" },
     ],
     snapshot: [
-      { title: "Course Coverage", value: "72%", detail: "Average syllabus completion across active courses" },
-      { title: "Review Queue", value: "11 new", detail: "Recent student submissions since morning" },
-      { title: "Teaching Load", value: "14 hrs", detail: "Faculty sessions scheduled this week" },
+      { title: "Course Coverage", value: "72%", detail: "Average syllabus completion" },
+      { title: "Review Queue", value: "11 new", detail: "Recent submissions today" },
+      { title: "Teaching Load", value: "14 hrs", detail: "Weekly scheduled hours" },
     ],
     quickLinks: [
-      { title: "Faculty Dashboard", to: "/faculty/dashboard", note: "Teaching plan, action items, submissions" },
-      { title: "Student View", to: "/student/dashboard", note: "Check what students currently see" },
+      { title: "Faculty Dashboard", to: "/faculty/dashboard", note: "Teaching plan and submissions" },
+      { title: "Student View", to: "/student/dashboard", note: "Check student experience" },
       { title: "Login", to: "/login", note: "Secure institutional access" },
     ],
     priorities: [
       { title: "Publish mid-sem marks", meta: "Due today before 5:00 PM" },
       { title: "Review late submissions", meta: "Close backlog for OS and DBMS" },
-      { title: "Approve attendance records", meta: "Finalize classroom logs for the week" },
+      { title: "Approve attendance records", meta: "Finalize weekly classroom logs" },
     ],
   },
 };
@@ -70,124 +70,129 @@ const Home = () => {
   return (
     <div className="home-page">
       <Navbar />
-      <main className="home-main">
-        <section className="home-hero">
-          <div className="home-hero__content">
-            <span className="home-eyebrow">{currentRole.badge}</span>
-            <h1>{currentRole.title}</h1>
-            <p>{currentRole.description}</p>
 
-            <div className="home-role-switch" aria-label="Select role home">
-              {Object.keys(roleContent).map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  className={`home-role-pill ${activeRole === role ? "home-role-pill--active" : ""}`}
-                  onClick={() => setActiveRole(role)}
-                >
-                  {role === "student" ? "Student" : "Faculty"}
-                </button>
-              ))}
+      <main>
+        {/* Hero */}
+        <section className="hero">
+          <div className="hero__inner">
+            <div>
+              <span className="hero__badge">{currentRole.badge}</span>
+              <h1 className="hero__title">{currentRole.title}</h1>
+              <p className="hero__desc">{currentRole.description}</p>
+
+              <div className="role-toggle">
+                {Object.keys(roleContent).map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    className={`role-pill ${activeRole === role ? "role-pill--active" : ""}`}
+                    onClick={() => setActiveRole(role)}
+                  >
+                    {role === "student" ? "Student" : "Faculty"}
+                  </button>
+                ))}
+              </div>
+
+              <div className="hero__actions">
+                <Link to={currentRole.primaryAction.to} className="btn btn--primary">
+                  {currentRole.primaryAction.label}
+                </Link>
+                <Link to={currentRole.secondaryAction.to} className="btn btn--ghost">
+                  {currentRole.secondaryAction.label}
+                </Link>
+              </div>
+
+              <div className="metrics">
+                {currentRole.metrics.map((item) => (
+                  <article key={item.label} className="metric-card">
+                    <strong>{item.value}</strong>
+                    <h3>{item.label}</h3>
+                    <p>{item.note}</p>
+                  </article>
+                ))}
+              </div>
             </div>
 
-            <div className="home-hero__actions">
-              <Link to={currentRole.primaryAction.to} className="home-btn home-btn--primary">
-                {currentRole.primaryAction.label}
-              </Link>
-              <Link to={currentRole.secondaryAction.to} className="home-btn home-btn--secondary">
-                {currentRole.secondaryAction.label}
-              </Link>
-            </div>
-
-            <div className="home-metric-row">
-              {currentRole.metrics.map((item) => (
-                <article key={item.label} className="home-metric-card">
-                  <strong>{item.value}</strong>
-                  <h3>{item.label}</h3>
-                  <p>{item.note}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-
-          <aside className="home-showcase">
-            <div className="home-showcase__card home-showcase__card--primary">
-              <span>Role Snapshot</span>
-              <h2>{activeRole === "student" ? "Student Workspace" : "Faculty Workspace"}</h2>
-              {currentRole.snapshot.map((item) => (
-                <div key={item.title} className="home-progress">
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>{item.detail}</p>
+            <aside className="showcase">
+              <div className="showcase__main">
+                <span>Workspace Snapshot</span>
+                <h2>{activeRole === "student" ? "Student Overview" : "Faculty Overview"}</h2>
+                {currentRole.snapshot.map((item) => (
+                  <div key={item.title} className="snap-item">
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p>{item.detail}</p>
+                    </div>
+                    <b>{item.value}</b>
                   </div>
-                  <b>{item.value}</b>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <div className="home-showcase__panel">
-              {currentRole.quickLinks.map((item) => (
-                <article key={item.title} className="home-mini-card">
-                  <p>{item.title}</p>
-                  <strong>{item.note}</strong>
-                  <Link to={item.to} className="home-inline-link">
-                    Open Page
-                  </Link>
-                </article>
-              ))}
-            </div>
-          </aside>
+              <div className="showcase__links">
+                {currentRole.quickLinks.map((item) => (
+                  <article key={item.title} className="mini-card">
+                    <p>{item.title}</p>
+                    <strong>{item.note}</strong>
+                    <Link to={item.to} className="mini-link">
+                      Open
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </aside>
+          </div>
         </section>
 
-        <section className="home-section">
-          <div className="home-section__heading">
+        {/* Quick Links section */}
+        <div className="section">
+          <div className="section__head">
             <div>
-              <span className="home-eyebrow">Page Traversal</span>
-              <h2>Move to the right workspace without guessing.</h2>
+              <span className="eyebrow">Quick Navigation</span>
+              <h2>Jump to the right workspace instantly.</h2>
             </div>
-            <p>
-              Choose a role, review role-specific quick links, and jump directly to the exact page you need.
-            </p>
+            <p>Role-specific pages and tools at your fingertips.</p>
           </div>
 
-          <div className="home-feature-grid home-feature-grid--links">
+          <div className="feature-grid">
             {currentRole.quickLinks.map((item) => (
-              <article key={item.title} className="home-feature-card">
+              <article key={item.title} className="feature-card">
                 <h3>{item.title}</h3>
                 <p>{item.note}</p>
-                <Link to={item.to} className="home-inline-link">
+                <Link to={item.to} className="feat-link">
                   Go to {item.title}
                 </Link>
               </article>
             ))}
           </div>
-        </section>
+        </div>
 
-        <section className="home-section home-section--analytics">
-          <div className="home-section__heading">
-            <div>
-              <span className="home-eyebrow">Current Priorities</span>
-              <h2>
-                {activeRole === "student"
-                  ? "What a student usually needs next"
-                  : "What a faculty member usually needs next"}
-              </h2>
+        {/* Priorities section */}
+        <div className="section--dark">
+          <div className="section-inner">
+            <div className="section__head">
+              <div>
+                <span className="eyebrow">Current Priorities</span>
+                <h2>
+                  {activeRole === "student"
+                    ? "What needs your attention now"
+                    : "Faculty action items today"}
+                </h2>
+              </div>
+              <p>Real academic tasks instead of noise.</p>
             </div>
-            <p>
-              The homepage stays useful by surfacing real academic work items instead of generic advertisement blocks.
-            </p>
-          </div>
 
-          <div className="home-priority-grid">
-            {currentRole.priorities.map((item) => (
-              <article key={item.title} className="home-priority-card">
-                <h3>{item.title}</h3>
-                <p>{item.meta}</p>
-              </article>
-            ))}
+            <div className="priority-grid">
+              {currentRole.priorities.map((item) => (
+                <article key={item.title} className="priority-card">
+                  <h3>{item.title}</h3>
+                  <p>{item.meta}</p>
+                </article>
+              ))}
+            </div>
           </div>
-        </section>
+        </div>
       </main>
+
       <Footer />
     </div>
   );

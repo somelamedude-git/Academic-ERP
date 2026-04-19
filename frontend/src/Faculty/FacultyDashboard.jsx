@@ -1,5 +1,7 @@
+import { useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
+import { useNavigate } from "react-router-dom";
 import "../Styles/FacultyDashboard.css";
 
 const overviewStats = [
@@ -19,6 +21,12 @@ const recentSubmissions = [
   { student: "Ananya Sharma", assignment: "SQL Query Optimization", status: "New" },
   { student: "Rohit Verma", assignment: "Process Scheduling Case Study", status: "Reviewed" },
   { student: "Sneha Patel", assignment: "Intermediate Code Generation", status: "Late" },
+];
+
+const pendingSubmissions = [
+  { id: 1, student: "Vikram Singh", assignment: "ER Diagram Assignment", due: "Yesterday" },
+  { id: 2, student: "Priya Das", assignment: "Process Scheduling Case Study", due: "Tomorrow" },
+  { id: 3, student: "Amit Kumar", assignment: "Compiler Lexical Analysis", due: "Today" },
 ];
 
 const actionItems = [
@@ -52,6 +60,16 @@ const statusClassName = {
 };
 
 const FacultyDashboard = () => {
+  const navigate = useNavigate();
+  const [remindersStatus, setRemindersStatus] = useState("idle");
+
+  const handleSendAllReminders = () => {
+    setRemindersStatus("sending");
+    setTimeout(() => {
+      setRemindersStatus("sent");
+    }, 1200);
+  };
+
   return (
     <div className="fd-page">
       <Navbar />
@@ -126,7 +144,17 @@ const FacultyDashboard = () => {
                     <strong>{item.title}</strong>
                     <p>{item.deadline}</p>
                   </div>
-                  <button type="button" className="fd-ghost-btn">Open</button>
+                  <button 
+                    type="button" 
+                    className="fd-ghost-btn"
+                    onClick={() => {
+                      if (item.title === "Upload Week 6 Assignment") {
+                        navigate("/faculty/upload-assignment");
+                      }
+                    }}
+                  >
+                    Open
+                  </button>
                 </li>
               ))}
             </ul>
@@ -145,6 +173,37 @@ const FacultyDashboard = () => {
                     <p>{item.assignment}</p>
                   </div>
                   <span className={statusClassName[item.status]}>{item.status}</span>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="fd-card fd-card--wide">
+            <div className="fd-card-header" style={{ alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <h3>Pending Submissions</h3>
+                <span className="fd-chip fd-chip--alert">Requires Action</span>
+              </div>
+              <button 
+                type="button" 
+                className="fd-ghost-btn"
+                onClick={handleSendAllReminders}
+                disabled={remindersStatus !== "idle"}
+                style={{ 
+                  color: remindersStatus === "sent" ? "#10b981" : undefined,
+                  fontSize: "13px"
+                }}
+              >
+                {remindersStatus === "sending" ? "Sending..." : remindersStatus === "sent" ? "✓ Reminded All" : "Remind All"}
+              </button>
+            </div>
+            <div className="fd-table">
+              {pendingSubmissions.map((item) => (
+                <div key={item.id} className="fd-table-row">
+                  <div>
+                    <strong>{item.student}</strong>
+                    <p>{item.assignment} • Due: {item.due}</p>
+                  </div>
                 </div>
               ))}
             </div>

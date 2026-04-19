@@ -5,6 +5,7 @@ import StudentDashBoard from "./student/StudentDashBoard.jsx";
 import Timetable from "./student/Timetable.jsx";
 import Assignment from "./student/Assignment.jsx";
 import FacultyDashboard from "./Faculty/FacultyDashboard.jsx";
+import UploadAssignment from "./Faculty/UploadAssignment.jsx";
 import AdminDashboard from "./Admin/AdminDashboard.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
@@ -20,6 +21,7 @@ function App() {
       </Route>
       <Route element={<ProtectedRoute allowedRole="faculty" />}>
         <Route path="/faculty/dashboard" element={<FacultyDashboard />} />
+        <Route path="/faculty/upload-assignment" element={<UploadAssignment />} />
       </Route>
       <Route element={<ProtectedRoute allowedRole="admin" />}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />

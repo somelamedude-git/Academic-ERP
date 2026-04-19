@@ -27,7 +27,6 @@ export default function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Backend-ready payload (JWT-based)
     const payload = {
       role,
       email: form.email,
@@ -49,80 +48,86 @@ export default function Login() {
 
   return (
     <div className="login-wrapper">
-      <section className="login-panel login-panel--brand">
-        <span className="login-eyebrow">Secure Institutional Access</span>
+      <section className="login-brand">
+        <span className="eyebrow">Secure Institutional Access</span>
         <h1>Academic ERP</h1>
         <p>
-          Access student services, faculty workflows, and administrative tools from one
-          professional campus platform.
+          Access student services, faculty workflows, and administrative tools
+          from one unified campus platform.
         </p>
 
-        <div className="login-brand-metrics">
+        <div className="login-brand-stats">
           <article>
             <strong>24/7</strong>
-            <span>Role-based access availability</span>
+            <span>Always-on access</span>
           </article>
           <article>
             <strong>3</strong>
-            <span>Dedicated portals in one system</span>
+            <span>Dedicated portals</span>
           </article>
           <article>
             <strong>100%</strong>
-            <span>Centralized academic visibility</span>
+            <span>Centralized data</span>
           </article>
         </div>
 
         <div className="login-brand-note">
-          <p>Recommended for IIIT Gwalior operations, class workflows, attendance, and reporting.</p>
+          <p>Designed for IIIT Gwalior — classes, attendance, and reporting.</p>
         </div>
       </section>
 
-      <section className="login-panel login-panel--form">
-        <div className="login-header">
-          <h2>Welcome back</h2>
-          <p>Use your institutional credentials to continue.</p>
-        </div>
+      <section className="login-form-panel">
+        <div className="login-form-box">
+          <div className="login-heading">
+            <h2>Welcome back</h2>
+            <p>Sign in with your institutional credentials.</p>
+          </div>
 
-        <div className="role-switch">
-          {["student", "faculty", "admin"].map((r) => (
-            <button
-              key={r}
-              type="button"
-              className={role === r ? "active" : ""}
-              onClick={() => setRole(r)}
-            >
-              {r.toUpperCase()}
+          <div className="login-role-switch">
+            {["student", "faculty", "admin"].map((r) => (
+              <button
+                key={r}
+                type="button"
+                className={role === r ? "active" : ""}
+                onClick={() => setRole(r)}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="login-field">
+              <label>Email</label>
+              <input
+                type="email"
+                name="email"
+                placeholder="Enter institutional email"
+                required
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="login-field">
+              <label>Password</label>
+              <input
+                type="password"
+                name="password"
+                placeholder="Enter password"
+                required
+                onChange={handleChange}
+              />
+            </div>
+
+            <button type="submit" className="login-submit">
+              Continue to Dashboard
             </button>
-          ))}
-        </div>
+          </form>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter institutional email"
-            required
-            onChange={handleChange}
-          />
-
-          <label>Password</label>
-          <input
-            type="password"
-            name="password"
-            placeholder="Enter password"
-            required
-            onChange={handleChange}
-          />
-
-          <button type="submit" className="login-btn">
-            Continue to Dashboard
-          </button>
-        </form>
-
-        <div className="login-footer">
-          <span>© Academic ERP System</span>
-          <span>Protected access for authorized campus users</span>
+          <div className="login-bottom">
+            <span>© Academic ERP System</span>
+            <span>Authorized users only</span>
+          </div>
         </div>
       </section>
     </div>

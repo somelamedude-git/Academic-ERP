@@ -1,0 +1,218 @@
+.ua-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+}
+
+.ua-container {
+  flex: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 40px 24px;
+}
+
+.ua-header {
+  margin-bottom: 32px;
+}
+
+.ua-header h1 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
+
+.ua-header p {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.ua-content {
+  background: rgba(10, 15, 30, 0.4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-sm);
+}
+
+.ua-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.ua-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ua-field--full {
+  grid-column: 1 / -1;
+}
+
+.ua-field label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.ua-field input,
+.ua-field select,
+.ua-field textarea {
+  background: var(--bg-elevated, #0f172a);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.ua-field option {
+  background-color: var(--bg-elevated, #0f172a);
+  color: var(--text-primary);
+}
+
+.ua-field input:focus,
+.ua-field select:focus,
+.ua-field textarea:focus {
+  outline: none;
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.ua-field textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Dropzone */
+.ua-dropzone {
+  position: relative;
+  width: 100%;
+}
+
+.ua-file-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.ua-file-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: rgba(10, 15, 30, 0.3);
+  border: 2px dashed var(--glass-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 160px;
+  text-align: center;
+}
+
+.ua-file-input:focus + .ua-file-label,
+.ua-file-label:hover {
+  border-color: var(--accent-indigo);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.ua-drop-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--glass-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-indigo);
+  margin-bottom: 16px;
+}
+
+.ua-file-label span {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.ua-file-label small {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.ua-file-name {
+  color: var(--accent-indigo) !important;
+  word-break: break-all;
+}
+
+/* Actions */
+.ua-actions {
+  margin-top: 32px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ua-submit-btn {
+  background: var(--gradient-brand);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+}
+
+.ua-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.ua-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ua-success-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #10b981;
+  font-weight: 500;
+  padding: 12px 24px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: var(--radius-sm);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .ua-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .ua-content {
+    padding: 24px 16px;
+  }
+}
