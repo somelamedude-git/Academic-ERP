@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import "../Styles/Timetable.css";
+import { getStudentTimetable } from "../Services/api.js";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const FALLBACK_START_HOUR = 8;
@@ -22,23 +23,14 @@ const Timetable = () => {
       try {
         setLoading(true);
         setError("");
-
-        const response = await fetch("/student/timetable");
-        if (!response.ok) {
-          throw new Error(`Failed to load timetable (${response.status})`);
-        }
-
-        const data = await response.json();
+        const data = await getStudentTimetable();
         if (isMounted) {
           const nextTimetable =
             data?.timetable && typeof data.timetable === "object"
               ? data.timetable
-              : data && typeof data === "object"
-                ? data
-                : {};
-          const nextOther = Array.isArray(data?.other) ? data.other : [];
+              : {};
           setTimetable(nextTimetable);
-          setOther(nextOther);
+          setOther([]);
         }
       } catch (err) {
         if (isMounted) {

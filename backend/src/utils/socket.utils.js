@@ -5,8 +5,43 @@ const { Student } = require('../../models/User');
 
 let io;
 
+// In-process cache: branchCode+semester → [facultyId strings]
+// TTL: 10 minutes. Avoids a DB hit on every socket connection.
+const branchFacultyCache = new Map();
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
+const getCachedFacultyIds = async (branchCode, semesterNumber) => {
+  const key = `${branchCode}:${semesterNumber}`;
+  const cached = branchFacultyCache.get(key);
+
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    return cached.facultyIds;
+  }
+
+  const branchDoc = await Branch.findOne({ code: branchCode, semesterNumber })
+    .populate('courses', 'facultyId')
+    .lean();
+
+  const facultyIds = branchDoc
+    ? branchDoc.courses.map(c => c.facultyId?.toString()).filter(Boolean)
+    : [];
+
+  branchFacultyCache.set(key, { facultyIds, ts: Date.now() });
+  return facultyIds;
+};
+
+// Call this when a branch's courses change so the cache doesn't serve stale data
+const invalidateBranchCache = (branchCode, semesterNumber) => {
+  branchFacultyCache.delete(`${branchCode}:${semesterNumber}`);
+};
+
 const initSocket = (httpServer) => {
-  io = new Server(httpServer, { cors: { origin: '*' } });
+  io = new Server(httpServer, {
+    cors: { origin: '*' },
+    // Tune connection settings for better stability
+    pingTimeout: 60000,
+    pingInterval: 25000,
+  });
 
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
@@ -29,18 +64,22 @@ const initSocket = (httpServer) => {
     }
 
     if (role === 'Student') {
-      const student = await Student.findById(userId).select('branchCode currentSemester').lean();
-      if (student) {
-        const branchDoc = await Branch.findOne({
-          code: student.branchCode,
-          semesterNumber: student.currentSemester
-        }).populate('courses', 'facultyId').lean();
+      try {
+        const student = await Student.findById(userId)
+          .select('branchCode currentSemester')
+          .lean();
 
-        if (branchDoc) {
-          for (const course of branchDoc.courses) {
-            socket.join(`faculty:${course.facultyId}`);
+        if (student) {
+          const facultyIds = await getCachedFacultyIds(
+            student.branchCode,
+            student.currentSemester
+          );
+          for (const facultyId of facultyIds) {
+            socket.join(`faculty:${facultyId}`);
           }
         }
+      } catch {
+        // Non-fatal — student just won't receive quiz notifications
       }
     }
 
@@ -60,4 +99,4 @@ const getIO = () => {
   return io;
 };
 
-module.exports = { initSocket, broadcastQuizUpdate, getIO };
+module.exports = { initSocket, broadcastQuizUpdate, getIO, invalidateBranchCache };

@@ -47,6 +47,7 @@ app.use('/api', apiLimiter);
 
 app.use('/api/auth', require('./src/routes/user.routes'));
 app.use('/api/admin', require('./src/routes/admin.routes'));
+app.use('/api/student', require('./src/routes/student.routes'));
 app.use('/api/courses', require('./src/routes/course.routes'));
 app.use('/api/faculty', require('./src/routes/faculty.routes'));
 app.use('/api/assignments', require('./src/routes/assignment.routes'));

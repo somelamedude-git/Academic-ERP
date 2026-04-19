@@ -11,4 +11,7 @@ const assignmentSchema = new mongoose.Schema({
   dueDate: { type: Date }
 }, { timestamps: true });
 
+assignmentSchema.index({ courseId: 1, dueDate: 1 });
+assignmentSchema.index({ facultyId: 1, courseId: 1 });
+
 module.exports = mongoose.model('Assignment', assignmentSchema);

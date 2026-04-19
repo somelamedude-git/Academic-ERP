@@ -1,5 +1,6 @@
 const Course = require('../../models/Course');
 const Branch = require('../../models/Branch');
+const { invalidateBranchCache } = require('../utils/socket.utils');
 const mongoose = require('mongoose');
 const log = require('../utils/logger.utils');
 
@@ -77,6 +78,7 @@ const addCourseToBranch = async (req, res) => {
       { upsert: true, new: true }
     );
     log.info('Course added to branch', { branchCode, semesterNumber, courseId });
+    invalidateBranchCache(branchCode.toUpperCase(), Number(semesterNumber));
     return res.status(200).json({ success: true, message: 'Course added to branch', branch: branchDoc });
   } catch (err) {
     log.error('addCourseToBranch failed', err, { branchCode, semesterNumber, courseId });
@@ -101,6 +103,7 @@ const removeCourseFromBranch = async (req, res) => {
       { $pull: { courses: new mongoose.Types.ObjectId(courseId) } }
     );
     log.info('Course removed from branch', { branchCode, semesterNumber, courseId });
+    invalidateBranchCache(branchCode.toUpperCase(), Number(semesterNumber));
     return res.status(200).json({ success: true, message: 'Course removed from branch' });
   } catch (err) {
     log.error('removeCourseFromBranch failed', err, { branchCode, semesterNumber, courseId });

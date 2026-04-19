@@ -1,4 +1,4 @@
-const { Student } = require('../../models/User');
+const { Student, Faculty, User } = require('../../models/User');
 const Branch = require('../../models/Branch');
 const FinalGrade = require('../../models/FinalGrade');
 const TimetablePDF = require('../../models/TimetablePDF');
@@ -221,4 +221,114 @@ const removeStudent = async (req, res) => {
   }
 };
 
-module.exports = { addStudent, removeStudent, getStudentGrades, editStudentGrade, uploadTimetable, getTimetables, deleteTimetable };
+const listStudents = async (req, res) => {
+  const { page = 1, limit = 50, search = '' } = req.query;
+  const skip = (Math.max(1, Number(page)) - 1) * Math.min(100, Number(limit));
+  const pageSize = Math.min(100, Number(limit));
+  const filter = search ? { $or: [
+    { name: { $regex: search, $options: 'i' } },
+    { email: { $regex: search, $options: 'i' } },
+    { enrollmentNo: { $regex: search, $options: 'i' } },
+  ]} : {};
+  try {
+    const [students, total] = await Promise.all([
+      Student.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+      Student.countDocuments(filter),
+    ]);
+    return res.status(200).json({ success: true, students, total, page: Number(page), pages: Math.ceil(total / pageSize) });
+  } catch (err) {
+    log.error('listStudents failed', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+const listFaculty = async (req, res) => {
+  const { page = 1, limit = 50, search = '' } = req.query;
+  const skip = (Math.max(1, Number(page)) - 1) * Math.min(100, Number(limit));
+  const pageSize = Math.min(100, Number(limit));
+  const filter = search ? { $or: [
+    { name: { $regex: search, $options: 'i' } },
+    { email: { $regex: search, $options: 'i' } },
+    { employee_id: { $regex: search, $options: 'i' } },
+  ]} : {};
+  try {
+    const [faculty, total] = await Promise.all([
+      Faculty.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+      Faculty.countDocuments(filter),
+    ]);
+    return res.status(200).json({ success: true, faculty, total, page: Number(page), pages: Math.ceil(total / pageSize) });
+  } catch (err) {
+    log.error('listFaculty failed', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+const addFaculty = async (req, res) => {
+  const { name, email, password, employee_id, designation, department_name, subjects } = req.body;
+
+  if (!name || !email || !password || !employee_id || !designation || !department_name) {
+    return res.status(400).json({ success: false, message: 'All fields are required' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const faculty = new Faculty({
+      name,
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      employee_id,
+      designation,
+      department_name,
+      subjects: subjects || []
+    });
+    await faculty.save();
+    log.info('Faculty added', { facultyId: faculty._id, employee_id });
+    return res.status(201).json({
+      success: true,
+      message: 'Faculty added successfully',
+      faculty: { id: faculty._id, name: faculty.name, email: faculty.email, employee_id: faculty.employee_id, designation: faculty.designation, department_name: faculty.department_name }
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Email or employee ID already exists' });
+    }
+    log.error('addFaculty failed', err, { employee_id });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+const removeFaculty = async (req, res) => {
+  const { facultyId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(facultyId)) {
+    return res.status(400).json({ success: false, message: 'Invalid facultyId' });
+  }
+
+  try {
+    const faculty = await Faculty.findByIdAndDelete(facultyId);
+    if (!faculty) {
+      return res.status(404).json({ success: false, message: 'Faculty not found' });
+    }
+    log.info('Faculty removed', { facultyId });
+    return res.status(200).json({ success: true, message: 'Faculty removed successfully' });
+  } catch (err) {
+    log.error('removeFaculty failed', err, { facultyId });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+const getAdminStats = async (req, res) => {
+  try {
+    const [studentCount, facultyCount, courseCount] = await Promise.all([
+      Student.countDocuments(),
+      Faculty.countDocuments(),
+      require('../../models/Course').countDocuments(),
+    ]);
+    return res.status(200).json({ success: true, stats: { students: studentCount, faculty: facultyCount, courses: courseCount } });
+  } catch (err) {
+    log.error('getAdminStats failed', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+module.exports = { addStudent, removeStudent, listStudents, listFaculty, addFaculty, removeFaculty, getAdminStats, getStudentGrades, editStudentGrade, uploadTimetable, getTimetables, deleteTimetable };

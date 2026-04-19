@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import "../Styles/Assignment.css";
+import { getStudentAssignments, submitAssignmentUrl } from "../Services/api.js";
+import { getStoredAuth } from "../auth/auth.js";
 
 const STATUS_ORDER = ["Pending", "In Progress", "Submitted", "Overdue"];
 
@@ -87,69 +89,98 @@ const Assignment = () => {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
-  useEffect(() => {
-    let isMounted = true;
+  // Detail / submit state
+  const [selected, setSelected] = useState(null);
+  const [submitMode, setSubmitMode] = useState("file"); // "file" | "url"
+  const [submitUrl, setSubmitUrl] = useState("");
+  const [submitFile, setSubmitFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState("");
 
-    const loadAssignments = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const load = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await getStudentAssignments();
+      setAssignments(Array.isArray(data.assignments) ? data.assignments : []);
+    } catch (err) {
+      setError(err.message || "Failed to load assignments.");
+      setAssignments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const response = await fetch("/student/assignments");
-        if (!response.ok) {
-          throw new Error(`Failed to load assignments (${response.status})`);
-        }
+  useEffect(() => { load(); }, []);
 
-        const data = await response.json();
-        if (isMounted) {
-          setAssignments(Array.isArray(data) && data.length > 0 ? data : assignmentInput);
-        }
-      } catch (err) {
-        if (isMounted) {
-          console.warn(err.message || "Failed to load assignments. Showing sample assignment data.");
-          setError("");
-          setAssignments(assignmentInput);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+
+  const openDetail = (item) => {
+    setSelected(item);
+    setSubmitMode("file");
+    setSubmitUrl("");
+    setSubmitFile(null);
+    setSubmitError("");
+    setSubmitSuccess("");
+  };
+
+  const closeDetail = () => setSelected(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitError("");
+    setSubmitSuccess("");
+    setSubmitting(true);
+
+    try {
+      if (submitMode === "url") {
+        if (!submitUrl.trim()) { setSubmitError("Please enter a URL."); setSubmitting(false); return; }
+        await submitAssignmentUrl(selected.id, submitUrl.trim());
+      } else {
+        if (!submitFile) { setSubmitError("Please select a PDF file."); setSubmitting(false); return; }
+        const auth = getStoredAuth();
+        const formData = new FormData();
+        formData.append("file", submitFile);
+        const res = await fetch(`/api/assignments/${selected.id}/submit`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${auth?.accessToken}` },
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Submission failed.");
+
       }
-    };
 
-    loadAssignments();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      setSubmitSuccess("Assignment submitted successfully!");
+      // Refresh list and update selected item status
+      const refreshed = await getStudentAssignments();
+      const list = Array.isArray(refreshed.assignments) ? refreshed.assignments : [];
+      setAssignments(list);
+      const updated = list.find(a => a.id === selected.id);
+      if (updated) setSelected(updated);
+    } catch (err) {
+      setSubmitError(err.message || "Submission failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const statuses = useMemo(() => {
     const existing = Array.from(
-      new Set(assignments.map((item) => (typeof item?.status === "string" ? item.status.trim() : "")).filter(Boolean)),
+      new Set(assignments.map(item => (typeof item?.status === "string" ? item.status.trim() : "")).filter(Boolean))
     );
-
     const sorted = [...existing].sort((a, b) => {
-      const ia = STATUS_ORDER.indexOf(a);
-      const ib = STATUS_ORDER.indexOf(b);
-      if (ia === -1 && ib === -1) {
-        return a.localeCompare(b);
-      }
-      if (ia === -1) {
-        return 1;
-      }
-      if (ib === -1) {
-        return -1;
-      }
+      const ia = STATUS_ORDER.indexOf(a), ib = STATUS_ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
       return ia - ib;
     });
-
     return ["All", ...sorted];
   }, [assignments]);
 
-  const filteredAssignments = useMemo(() => {
+  const filtered = useMemo(() => {
     const text = query.trim().toLowerCase();
-
     return assignments.filter((item) => {
       const status = typeof item?.status === "string" ? item.status.trim() : "";
       const title = typeof item?.title === "string" ? item.title : "";
@@ -177,6 +208,9 @@ const Assignment = () => {
 
     return { total, submitted, active, overdue, averageProgress };
   }, [assignments]);
+
+  const canSubmit = selected && selected.status !== "Submitted";
+  const isOverdue = selected?.status === "Overdue";
 
   const statusChart = useMemo(() => {
     return STATUS_ORDER.map((status) => ({
@@ -225,7 +259,7 @@ const Assignment = () => {
             <h1>Plan every submission with clarity.</h1>
             <p>
               Review deadlines, track progress, filter coursework, and focus on the assignments
-              that need attention today.
+              that need attention today. Click any assignment to view details and submit your work.
             </p>
 
             <div className="as-hero-actions">
@@ -260,6 +294,7 @@ const Assignment = () => {
           </div>
         </section>
 
+<<<<<<< HEAD
         <section className="as-summary-grid" aria-label="Assignment summary">
           <article className="as-summary-card">
             <span className="as-summary-icon as-summary-icon--total">A</span>
@@ -318,13 +353,13 @@ const Assignment = () => {
               {loading && <p className="as-muted">Loading assignments...</p>}
               {!loading && error && <p className="as-error">{error}</p>}
 
-              {!loading && !error && filteredAssignments.length === 0 && (
+              {!loading && !error && filtered.length === 0 && (
                 <p className="as-empty">No assignments match your filters.</p>
               )}
 
-              {!loading && !error && filteredAssignments.length > 0 && (
+              {!loading && !error && filtered.length > 0 && (
                 <ul className="as-list">
-                  {filteredAssignments.map((item, index) => {
+                  {filtered.map((item, index) => {
                     const title = item?.title || "Untitled Assignment";
                     const course = item?.course || "Course not specified";
                     const due = item?.due || "Due date unavailable";
@@ -332,7 +367,14 @@ const Assignment = () => {
                     const progress = clampProgress(item?.progress);
 
                     return (
-                      <li key={`${title}-${course}-${due}-${index}`} className="as-item">
+                      <li
+                        key={`${item.id || title}-${course}-${due}-${index}`}
+                        className="as-item as-item--clickable"
+                        onClick={() => openDetail(item)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={e => e.key === "Enter" && openDetail(item)}
+                      >
                         <div className={`as-visual-icon as-visual-icon--${toStatusClass(status)}`}>
                           {getAssignmentInitial(title)}
                         </div>
@@ -463,6 +505,90 @@ const Assignment = () => {
         </section>
       </main>
       <Footer />
+
+      {/* Detail + Submit Modal */}
+      {selected && (
+        <div className="as-modal-overlay" onClick={closeDetail}>
+          <div className="as-modal" onClick={e => e.stopPropagation()}>
+            <button className="as-modal-close" onClick={closeDetail} aria-label="Close">✕</button>
+
+            <div className="as-modal-header">
+              <span className={`as-status as-status--${toStatusClass(selected.status)}`}>{selected.status}</span>
+              <h2>{selected.title}</h2>
+              <p className="as-modal-course">{selected.course}</p>
+            </div>
+
+            {selected.description && (
+              <div className="as-modal-section">
+                <h4>Description</h4>
+                <p>{selected.description}</p>
+              </div>
+            )}
+
+            <div className="as-modal-section as-modal-meta-row">
+              <div>
+                <span className="as-modal-label">Due Date</span>
+                <strong>{selected.due}</strong>
+              </div>
+              {selected.resourceUrl && (
+                <a href={selected.resourceUrl} target="_blank" rel="noreferrer" className="as-view-btn">
+                  View Assignment ↗
+                </a>
+              )}
+            </div>
+
+            {selected.status === "Submitted" && (
+              <div className="as-modal-submitted">
+                ✓ You have already submitted this assignment.
+              </div>
+            )}
+
+            {canSubmit && (
+              <form onSubmit={handleSubmit} className="as-submit-form">
+                <h4>Submit Your Work</h4>
+
+                {isOverdue && (
+                  <p className="as-overdue-warn">⚠ This assignment is past its deadline. Late submissions may not be accepted.</p>
+                )}
+
+                <div className="as-submit-tabs">
+                  <button type="button" className={`as-submit-tab ${submitMode === "file" ? "as-submit-tab--active" : ""}`} onClick={() => setSubmitMode("file")}>Upload PDF</button>
+                  <button type="button" className={`as-submit-tab ${submitMode === "url" ? "as-submit-tab--active" : ""}`} onClick={() => setSubmitMode("url")}>Submit Link</button>
+                </div>
+
+                {submitMode === "file" && (
+                  <label className="as-file-label">
+                    {submitFile ? submitFile.name : "Choose a PDF file"}
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      style={{ display: "none" }}
+                      onChange={e => setSubmitFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                )}
+
+                {submitMode === "url" && (
+                  <input
+                    type="url"
+                    className="as-input"
+                    placeholder="https://drive.google.com/... or any link"
+                    value={submitUrl}
+                    onChange={e => setSubmitUrl(e.target.value)}
+                  />
+                )}
+
+                {submitError && <p className="as-error" style={{ margin: "8px 0 0" }}>{submitError}</p>}
+                {submitSuccess && <p style={{ color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px", padding: "8px 12px", margin: "8px 0 0" }}>{submitSuccess}</p>}
+
+                <button type="submit" className="as-submit-btn" disabled={submitting}>
+                  {submitting ? "Submitting..." : "Submit Assignment"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -470,18 +596,10 @@ const Assignment = () => {
 const clampProgress = (value) => Math.min(Math.max(Number(value) || 0, 0), 100);
 
 const toStatusClass = (status) => {
-  const text = String(status || "").toLowerCase();
-
-  if (text.includes("submit")) {
-    return "submitted";
-  }
-  if (text.includes("over")) {
-    return "overdue";
-  }
-  if (text.includes("progress")) {
-    return "progress";
-  }
-
+  const t = String(status || "").toLowerCase();
+  if (t.includes("submit")) return "submitted";
+  if (t.includes("over")) return "overdue";
+  if (t.includes("progress")) return "progress";
   return "pending";
 };
 

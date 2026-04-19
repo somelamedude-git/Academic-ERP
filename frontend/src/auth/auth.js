@@ -39,6 +39,8 @@ export const saveAuth = (authData) => {
   window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
 };
 
+export const getStoredToken = () => getStoredAuth()?.accessToken ?? null;
+
 export const clearAuth = () => {
   if (typeof window === "undefined") {
     return;

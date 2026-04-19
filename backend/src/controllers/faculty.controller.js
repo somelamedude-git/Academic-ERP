@@ -1,4 +1,5 @@
 const CourseMaterial = require('../../models/CourseMaterial');
+const Course = require('../../models/Course');
 const { cloudinary } = require('../utils/cloudinary.utils');
 const mongoose = require('mongoose');
 const log = require('../utils/logger.utils');
@@ -74,14 +75,20 @@ const addExternalLink = async (req, res) => {
 
 const getMaterials = async (req, res) => {
   const { courseId } = req.params;
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (Math.max(1, Number(page)) - 1) * Math.min(50, Number(limit));
+  const pageSize = Math.min(50, Number(limit));
 
   if (!mongoose.Types.ObjectId.isValid(courseId)) {
     return res.status(400).json({ success: false, message: 'Invalid courseId' });
   }
 
   try {
-    const materials = await CourseMaterial.find({ courseId }).sort({ createdAt: -1 }).lean();
-    return res.status(200).json({ success: true, materials });
+    const [materials, total] = await Promise.all([
+      CourseMaterial.find({ courseId }).sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+      CourseMaterial.countDocuments({ courseId }),
+    ]);
+    return res.status(200).json({ success: true, materials, total, page: Number(page), pages: Math.ceil(total / pageSize) });
   } catch (err) {
     log.error('getMaterials failed', err, { courseId });
     return res.status(500).json({ success: false, message: 'Internal server error' });
@@ -116,4 +123,15 @@ const deleteMaterial = async (req, res) => {
   }
 };
 
-module.exports = { uploadMaterial, addExternalLink, getMaterials, deleteMaterial };
+const getMyCourses = async (req, res) => {
+  const user_id = req.user_id;
+  try {
+    const courses = await Course.find({ facultyId: user_id }).lean();
+    return res.status(200).json({ success: true, courses });
+  } catch (err) {
+    log.error('getMyCourses failed', err, { facultyId: user_id });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+module.exports = { uploadMaterial, addExternalLink, getMaterials, deleteMaterial, getMyCourses };

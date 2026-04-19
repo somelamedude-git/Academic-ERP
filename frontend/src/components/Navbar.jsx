@@ -1,7 +1,9 @@
+
 import { useState, useRef, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 import { clearAuth, getStoredAuth, getStoredRole } from "../auth/auth.js";
+
 
 const roleConfig = {
   student: {
@@ -10,13 +12,25 @@ const roleConfig = {
       { label: "Dashboard", to: "/student/dashboard" },
       { label: "Assignments", to: "/student/assignments" },
       { label: "Timetable", to: "/student/timetable" },
+      { label: "Grades", to: "/student/grades" },
+      { label: "Quizzes", to: "/student/quizzes" },
+      { label: "Materials", to: "/student/materials" },
+      { label: "Feedback", to: "/student/feedback" },
     ],
   },
   faculty: {
     label: "Faculty Workspace",
+
+    note: "Classes, reviews, publishing",
     links: [
       { label: "Dashboard", to: "/faculty/dashboard" },
-      { label: "Upload Assignment", to: "/faculty/upload-assignment" },
+      { label: "Assignments", to: "/faculty/assignments" },
+      { label: "Materials", to: "/faculty/materials" },
+      { label: "Attendance", to: "/faculty/attendance" },
+      { label: "Grades", to: "/faculty/grades" },
+      { label: "Quizzes", to: "/faculty/quizzes" },
+      { label: "Feedback", to: "/faculty/feedback" },
+
     ],
   },
   admin: {
@@ -24,6 +38,8 @@ const roleConfig = {
     links: [
       { label: "Dashboard", to: "/admin/dashboard" },
       { label: "Manage Users", to: "/admin/manage-users" },
+      { label: "Courses", to: "/admin/manage-courses" },
+      { label: "Timetable", to: "/admin/timetable" },
     ],
   },
   home: {
@@ -39,6 +55,7 @@ const roleConfig = {
 function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -53,6 +70,8 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+
+
   const path = location.pathname;
   const storedAuth = getStoredAuth();
   const storedRole = getStoredRole();
@@ -60,6 +79,7 @@ function Navbar() {
   const isStudent = path.startsWith("/student") || storedRole === "student";
   const isFaculty = path.startsWith("/faculty") || storedRole === "faculty";
   const isAdmin = path.startsWith("/admin") || storedRole === "admin";
+  const isLoggedIn = Boolean(storedRole);
   const context = isStudent
     ? roleConfig.student
     : isFaculty
@@ -68,10 +88,23 @@ function Navbar() {
         ? roleConfig.admin
         : roleConfig.home;
 
-  const handleChangeAccount = () => {
+
+  const handleLogout = () => {
     clearAuth();
     navigate("/login", { replace: true });
   };
+
+  return (
+    <header className="navbar-shell">
+      <nav className="navbar">
+        <NavLink to="/" className="navbar-brand" aria-label="Academic ERP Home">
+          <span className="navbar-brand__mark">AE</span>
+          <span>
+            <strong>Academic ERP</strong>
+            <small>Institution Operations Suite</small>
+          </span>
+        </NavLink>
+
 
   return (
     <header className="nav-shell">
@@ -181,13 +214,13 @@ function Navbar() {
                 {item.label}
               </NavLink>
             ))}
-          {isSignedIn ? (
-            <button type="button" className="nav-cta" onClick={handleChangeAccount}>
-              Sign Out
+          {isLoggedIn ? (
+            <button type="button" className="nav-cta" onClick={handleLogout}>
+              Logout
             </button>
           ) : (
             <NavLink to="/login" className="nav-cta" onClick={() => setMenuOpen(false)}>
-              Sign In
+              Secure Login
             </NavLink>
           )}
         </div>

@@ -249,3 +249,13 @@
   font-size: 11px;
   color: var(--text-dim);
 }
+
+.login-error {
+  color: #c0392b;
+  font-size: 0.85rem;
+  background: #fdf0ee;
+  border: 1px solid #e8b4ae;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
