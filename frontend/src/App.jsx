@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Home from "./Pages/Home.jsx";
 import Login from "./Pages/Login.jsx";
+import Profile from "./Pages/Profile.jsx";
 import StudentDashBoard from "./student/StudentDashBoard.jsx";
 import Timetable from "./student/Timetable.jsx";
 import Assignment from "./student/Assignment.jsx";
@@ -20,12 +21,20 @@ import ManageUsers from "./Admin/ManageUsers.jsx";
 import ManageCourses from "./Admin/ManageCourses.jsx";
 import ManageTimetable from "./Admin/ManageTimetable.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { isAuthenticated } from "./auth/auth.js";
+
+// Profile is shared across all roles — just needs to be logged in
+const AuthGuard = () => isAuthenticated() ? null : <Navigate to="/login" replace />;
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+
+      {/* Shared profile route — any authenticated user */}
+      <Route path="/profile" element={<><AuthGuard /><Profile /></>} />
+
       <Route element={<ProtectedRoute allowedRole="student" />}>
         <Route path="/student/dashboard" element={<StudentDashBoard />} />
         <Route path="/student/assignments" element={<Assignment />} />
@@ -35,6 +44,7 @@ function App() {
         <Route path="/student/materials" element={<CourseMaterials />} />
         <Route path="/student/feedback" element={<FeedbackComplaint />} />
       </Route>
+
       <Route element={<ProtectedRoute allowedRole="faculty" />}>
         <Route path="/faculty/dashboard" element={<FacultyDashboard />} />
         <Route path="/faculty/assignments" element={<FacultyAssignments />} />
@@ -44,12 +54,14 @@ function App() {
         <Route path="/faculty/quizzes" element={<FacultyQuizzes />} />
         <Route path="/faculty/feedback" element={<FacultyFeedback />} />
       </Route>
+
       <Route element={<ProtectedRoute allowedRole="admin" />}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/manage-users" element={<ManageUsers />} />
         <Route path="/admin/manage-courses" element={<ManageCourses />} />
         <Route path="/admin/timetable" element={<ManageTimetable />} />
       </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

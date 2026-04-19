@@ -20,4 +20,7 @@ const quizSchema = new mongoose.Schema({
   isExpired: { type: Boolean, default: false }
 }, { timestamps: true });
 
+quizSchema.index({ facultyId: 1, createdAt: -1 });
+quizSchema.index({ courseId: 1, isVisible: 1, isExpired: 1, expiresAt: 1 });
+
 module.exports = mongoose.model('Quiz', quizSchema);

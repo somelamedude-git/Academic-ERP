@@ -13,5 +13,6 @@ const quizSubmissionSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 quizSubmissionSchema.index({ quizId: 1, studentId: 1 }, { unique: true });
+quizSubmissionSchema.index({ quizId: 1 });
 
 module.exports = mongoose.model('QuizSubmission', quizSubmissionSchema);

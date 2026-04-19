@@ -108,9 +108,17 @@ function Navbar() {
               </NavLink>
             ))}
           {isLoggedIn ? (
-            <button type="button" onClick={handleLogout} className="navbar-cta navbar-cta--logout">
-              Logout
-            </button>
+            <>
+              <NavLink
+                to="/profile"
+                className={({ isActive }) => `navbar-link ${isActive ? "navbar-link--active" : ""}`}
+              >
+                Profile
+              </NavLink>
+              <button type="button" onClick={handleLogout} className="navbar-cta navbar-cta--logout">
+                Logout
+              </button>
+            </>
           ) : (
             <NavLink to="/login" className="navbar-cta">
               Secure Login

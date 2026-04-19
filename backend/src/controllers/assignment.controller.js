@@ -2,7 +2,7 @@ const Assignment = require('../../models/Assignment');
 const Submission = require('../../models/Submission');
 const Branch = require('../../models/Branch');
 const { Student } = require('../../models/User');
-const { cloudinary } = require('../utils/cloudinary.utils');
+const { cloudinary, getSignedUrl, getPublicUrl } = require('../utils/cloudinary.utils');
 const mongoose = require('mongoose');
 const log = require('../utils/logger.utils');
 
@@ -99,8 +99,14 @@ const getCourseAssignments = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
-    const assignments = await Assignment.find({ courseId }).sort({ createdAt: -1 }).lean();
-    return res.status(200).json({ success: true, assignments });
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (Math.max(1, Number(page)) - 1) * Math.min(50, Number(limit));
+    const pageSize = Math.min(50, Number(limit));
+    const [assignments, total] = await Promise.all([
+      Assignment.find({ courseId }).sort({ dueDate: 1 }).skip(skip).limit(pageSize).lean(),
+      Assignment.countDocuments({ courseId }),
+    ]);
+    return res.status(200).json({ success: true, assignments, total, page: Number(page), pages: Math.ceil(total / pageSize) });
   } catch (err) {
     log.error('getCourseAssignments failed', err, { courseId });
     return res.status(500).json({ success: false, message: 'Internal server error' });
@@ -118,8 +124,12 @@ const submitAssignment = async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
     return res.status(400).json({ success: false, message: 'Invalid assignmentId' });
   }
-  if (!req.file) {
-    return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
+
+  const hasFile = Boolean(req.file);
+  const submissionUrl = req.body.submissionUrl?.trim();
+
+  if (!hasFile && !submissionUrl) {
+    return res.status(400).json({ success: false, message: 'Provide a PDF file or a submission URL' });
   }
 
   try {
@@ -131,9 +141,22 @@ const submitAssignment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Assignment deadline has passed' });
     }
 
-    const submission = new Submission({ assignmentId, studentId: user_id, cloudinaryUrl: req.file.path, cloudinaryPublicId: req.file.filename });
+    const submissionData = {
+      assignmentId,
+      studentId: user_id,
+      submissionType: hasFile ? 'File' : 'URL',
+    };
+
+    if (hasFile) {
+      submissionData.cloudinaryUrl = req.file.path;
+      submissionData.cloudinaryPublicId = req.file.filename;
+    } else {
+      submissionData.submissionUrl = submissionUrl;
+    }
+
+    const submission = new Submission(submissionData);
     await submission.save();
-    log.info('Assignment submitted', { assignmentId, studentId: user_id });
+    log.info('Assignment submitted', { assignmentId, studentId: user_id, type: submissionData.submissionType });
     return res.status(201).json({ success: true, message: 'Assignment submitted successfully', submission });
   } catch (err) {
     if (err.code === 11000) {
@@ -156,12 +179,63 @@ const getAssignmentSubmissions = async (req, res) => {
   }
 
   try {
-    const submissions = await Submission.find({ assignmentId }).populate('studentId', 'name enrollmentNo').lean();
-    return res.status(200).json({ success: true, submissions });
+    const submissions = await Submission.find({ assignmentId })
+      .populate('studentId', 'name enrollmentNo')
+      .lean();
+
+    const result = submissions.map(s => {
+      let viewUrl = s.submissionUrl ?? null;
+      if (s.cloudinaryPublicId) {
+        // Proxy through our backend to avoid Cloudinary access restrictions
+        viewUrl = `/api/assignments/submission-file/${s._id}`;
+      }
+      return {
+        _id: s._id,
+        studentId: s.studentId,
+        submissionType: s.submissionType ?? 'File',
+        viewUrl,
+        createdAt: s.createdAt,
+      };
+    });
+
+    return res.status(200).json({ success: true, submissions: result });
   } catch (err) {
     log.error('getAssignmentSubmissions failed', err, { assignmentId });
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
-module.exports = { createAssignment, deleteAssignment, getCourseAssignments, submitAssignment, getAssignmentSubmissions };
+const proxySubmissionFile = async (req, res) => {
+  const user_role = req.user_role;
+  const { submissionId } = req.params;
+
+  if (user_role !== 'Faculty' && user_role !== 'Admin') {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  if (!mongoose.Types.ObjectId.isValid(submissionId)) {
+    return res.status(400).json({ success: false, message: 'Invalid submissionId' });
+  }
+
+  try {
+    const submission = await Submission.findById(submissionId).lean();
+    if (!submission || !submission.cloudinaryUrl) {
+      return res.status(404).json({ success: false, message: 'Submission file not found' });
+    }
+
+    const https = require('https');
+    const url = new URL(submission.cloudinaryUrl);
+
+    https.get(submission.cloudinaryUrl, (cloudRes) => {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="submission.pdf"`);
+      cloudRes.pipe(res);
+    }).on('error', () => {
+      res.status(502).json({ success: false, message: 'Failed to fetch file from storage' });
+    });
+  } catch (err) {
+    log.error('proxySubmissionFile failed', err, { submissionId });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+module.exports = { createAssignment, deleteAssignment, getCourseAssignments, submitAssignment, getAssignmentSubmissions, proxySubmissionFile };

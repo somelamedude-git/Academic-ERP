@@ -8,4 +8,6 @@ const timetableSchema = new mongoose.Schema({
   roomNo: { type: String, required: [true, 'Room number is required'] }
 }, { timestamps: true });
 
+timetableSchema.index({ courseId: 1, day: 1 });
+
 module.exports = mongoose.model('Timetable', timetableSchema);

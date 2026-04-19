@@ -222,9 +222,20 @@ const removeStudent = async (req, res) => {
 };
 
 const listStudents = async (req, res) => {
+  const { page = 1, limit = 50, search = '' } = req.query;
+  const skip = (Math.max(1, Number(page)) - 1) * Math.min(100, Number(limit));
+  const pageSize = Math.min(100, Number(limit));
+  const filter = search ? { $or: [
+    { name: { $regex: search, $options: 'i' } },
+    { email: { $regex: search, $options: 'i' } },
+    { enrollmentNo: { $regex: search, $options: 'i' } },
+  ]} : {};
   try {
-    const students = await Student.find().select('-password').sort({ createdAt: -1 }).lean();
-    return res.status(200).json({ success: true, students });
+    const [students, total] = await Promise.all([
+      Student.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+      Student.countDocuments(filter),
+    ]);
+    return res.status(200).json({ success: true, students, total, page: Number(page), pages: Math.ceil(total / pageSize) });
   } catch (err) {
     log.error('listStudents failed', err);
     return res.status(500).json({ success: false, message: 'Internal server error' });
@@ -232,9 +243,20 @@ const listStudents = async (req, res) => {
 };
 
 const listFaculty = async (req, res) => {
+  const { page = 1, limit = 50, search = '' } = req.query;
+  const skip = (Math.max(1, Number(page)) - 1) * Math.min(100, Number(limit));
+  const pageSize = Math.min(100, Number(limit));
+  const filter = search ? { $or: [
+    { name: { $regex: search, $options: 'i' } },
+    { email: { $regex: search, $options: 'i' } },
+    { employee_id: { $regex: search, $options: 'i' } },
+  ]} : {};
   try {
-    const faculty = await Faculty.find().select('-password').sort({ createdAt: -1 }).lean();
-    return res.status(200).json({ success: true, faculty });
+    const [faculty, total] = await Promise.all([
+      Faculty.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+      Faculty.countDocuments(filter),
+    ]);
+    return res.status(200).json({ success: true, faculty, total, page: Number(page), pages: Math.ceil(total / pageSize) });
   } catch (err) {
     log.error('listFaculty failed', err);
     return res.status(500).json({ success: false, message: 'Internal server error' });

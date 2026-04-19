@@ -10,5 +10,7 @@ const finalGradeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 finalGradeSchema.index({ studentId: 1, courseId: 1 }, { unique: true });
+finalGradeSchema.index({ studentId: 1 });
+finalGradeSchema.index({ courseId: 1 });
 
 module.exports = mongoose.model('FinalGrade', finalGradeSchema);

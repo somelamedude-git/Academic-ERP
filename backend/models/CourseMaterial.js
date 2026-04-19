@@ -11,4 +11,7 @@ const courseMaterialSchema = new mongoose.Schema({
   originalName: { type: String, trim: true }
 }, { timestamps: true });
 
+courseMaterialSchema.index({ courseId: 1, createdAt: -1 });
+courseMaterialSchema.index({ facultyId: 1 });
+
 module.exports = mongoose.model('CourseMaterial', courseMaterialSchema);

@@ -33,6 +33,11 @@ const request = async (method, path, body = null, isFormData = false) => {
 export const login = (email, password) =>
   request('POST', '/auth/login', { email, password });
 
+export const getProfile = () => request('GET', '/auth/profile');
+export const updateProfile = (name) => request('PATCH', '/auth/profile', { name });
+export const changePassword = (currentPassword, newPassword) =>
+  request('PATCH', '/auth/profile/password', { currentPassword, newPassword });
+
 // ── Student dashboard ─────────────────────────────────────────────────────────
 export const getStudentDashboard = () => request('GET', '/student/dashboard');
 export const getStudentAssignments = () => request('GET', '/student/assignments');
@@ -49,6 +54,9 @@ export const getCourseAssignments = (courseId) =>
 
 export const submitAssignment = (assignmentId, formData) =>
   request('POST', `/assignments/${assignmentId}/submit`, formData, true);
+
+export const submitAssignmentUrl = (assignmentId, submissionUrl) =>
+  request('POST', `/assignments/${assignmentId}/submit`, { submissionUrl });
 
 // ── Grades ────────────────────────────────────────────────────────────────────
 export const getMyGrades = () => request('GET', '/grades/me');

@@ -2,7 +2,23 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { getMyCourses, getFacultyCourseAssignments, createAssignmentUrl, deleteAssignment, getAssignmentSubmissions } from "../Services/api.js";
+import { getStoredAuth } from "../auth/auth.js";
 import "../Styles/Faculty.css";
+
+const openSubmissionFile = async (url) => {
+  try {
+    const auth = getStoredAuth();
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${auth?.accessToken}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch file");
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    window.open(objectUrl, "_blank");
+  } catch {
+    alert("Could not open the file. Please try again.");
+  }
+};
 
 const emptyForm = { title: "", description: "", dueDate: "", resourceUrl: "", courseId: "" };
 
@@ -171,7 +187,17 @@ export default function FacultyAssignments() {
                           <td><strong>{s.studentId?.name ?? "—"}</strong></td>
                           <td>{s.studentId?.enrollmentNo ?? "—"}</td>
                           <td>{new Date(s.createdAt).toLocaleDateString("en-IN")}</td>
-                          <td><a href={s.cloudinaryUrl} target="_blank" rel="noreferrer" className="fc-btn fc-btn--ghost" style={{ padding: "5px 12px", fontSize: "0.8rem" }}>Open</a></td>
+                          <td>
+                            {s.viewUrl ? (
+                              s.submissionType === "URL" ? (
+                                <a href={s.viewUrl} target="_blank" rel="noreferrer" className="fc-btn fc-btn--ghost" style={{ padding: "5px 12px", fontSize: "0.8rem" }}>Open Link</a>
+                              ) : (
+                                <button className="fc-btn fc-btn--ghost" style={{ padding: "5px 12px", fontSize: "0.8rem" }} onClick={() => openSubmissionFile(s.viewUrl)}>Open PDF</button>
+                              )
+                            ) : (
+                              <span style={{ color: "#6b7280", fontSize: "0.82rem" }}>No file</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

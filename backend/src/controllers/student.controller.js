@@ -41,7 +41,9 @@ const getDashboard = async (req, res) => {
       return {
         id: a._id,
         title: a.title,
+        description: a.description ?? '',
         course: courseObj?.name ?? 'Unknown Course',
+        dueDate: a.dueDate ?? null,
         due: a.dueDate ? new Date(a.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'No deadline',
         status: submitted ? 'Submitted' : overdue ? 'Overdue' : 'Pending',
         resourceUrl: a.resourceUrl,
@@ -110,7 +112,9 @@ const getMyAssignments = async (req, res) => {
       return {
         id: a._id,
         title: a.title,
+        description: a.description ?? '',
         course: courseObj?.name ?? 'Unknown Course',
+        dueDate: a.dueDate ?? null,
         due: a.dueDate ? new Date(a.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'No deadline',
         status: submitted ? 'Submitted' : overdue ? 'Overdue' : 'Pending',
         resourceUrl: a.resourceUrl,

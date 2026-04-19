@@ -36,7 +36,12 @@ const assignmentStorage = new CloudinaryStorage({
 
 const submissionStorage = new CloudinaryStorage({
   cloudinary,
-  params: { folder: 'submissions', resource_type: 'raw', format: 'pdf' }
+  params: {
+    folder: 'submissions',
+    resource_type: 'raw',
+    format: 'pdf',
+    type: 'upload',
+  }
 });
 
 const uploadPDF = multer({
@@ -72,4 +77,24 @@ const uploadSubmission = multer({
   }
 });
 
-module.exports = { uploadPDF, uploadMaterial, uploadAssignment, uploadSubmission, cloudinary };
+module.exports = { uploadPDF, uploadMaterial, uploadAssignment, uploadSubmission, cloudinary, getSignedUrl, getPublicUrl };
+
+// For files uploaded before the public type fix, they are 'authenticated'.
+// For new uploads they are 'upload' (public) and don't need signing.
+// We generate a signed authenticated URL to cover both cases — Cloudinary
+// will serve it if the asset exists under either type.
+function getSignedUrl(publicId) {
+  return cloudinary.url(publicId, {
+    resource_type: 'raw',
+    type: 'authenticated',
+    sign_url: true,
+    expires_at: Math.floor(Date.now() / 1000) + 300,
+  });
+}
+
+function getPublicUrl(publicId) {
+  return cloudinary.url(publicId, {
+    resource_type: 'raw',
+    type: 'upload',
+  });
+}
