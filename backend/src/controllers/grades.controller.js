@@ -73,4 +73,39 @@ const getMyGrades = async (req, res) => {
   }
 };
 
-module.exports = { assignGrades, getMyGrades };
+// GET /api/grades/course/:courseId/students
+// Returns all students enrolled in branches that contain this course
+const getStudentsByCourse = async (req, res) => {
+  const { courseId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    return res.status(400).json({ success: false, message: 'Invalid courseId' });
+  }
+
+  try {
+    // Find all branch+semester combos that contain this course
+    const branches = await Branch.find({ courses: courseId }).lean();
+
+    if (!branches.length) {
+      return res.status(200).json({ success: true, students: [] });
+    }
+
+    // Collect all branch codes and semester numbers
+    const conditions = branches.map(b => ({
+      branchCode: b.code,
+      currentSemester: b.semesterNumber,
+    }));
+
+    const students = await Student.find({ $or: conditions })
+      .select('name email enrollmentNo branchCode currentSemester degree')
+      .sort({ branchCode: 1, enrollmentNo: 1 })
+      .lean();
+
+    return res.status(200).json({ success: true, students });
+  } catch (err) {
+    log.error('getStudentsByCourse failed', err, { courseId });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+module.exports = { assignGrades, getMyGrades, getStudentsByCourse };

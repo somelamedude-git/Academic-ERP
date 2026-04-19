@@ -11,9 +11,17 @@ const openSubmissionFile = async (url) => {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${auth?.accessToken}` },
     });
-    if (!res.ok) throw new Error("Failed to fetch file");
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.message || `Failed to fetch file (${res.status})`);
+      return;
+    }
     const blob = await res.blob();
-    const objectUrl = URL.createObjectURL(blob);
+    if (blob.size === 0) {
+      alert("Received an empty file. Please try again.");
+      return;
+    }
+    const objectUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
     window.open(objectUrl, "_blank");
   } catch {
     alert("Could not open the file. Please try again.");

@@ -222,16 +222,17 @@ const proxySubmissionFile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Submission file not found' });
     }
 
-    const https = require('https');
-    const url = new URL(submission.cloudinaryUrl);
+    const cloudinaryRes = await fetch(submission.cloudinaryUrl);
+    if (!cloudinaryRes.ok) {
+      log.error('Cloudinary fetch failed', { status: cloudinaryRes.status, submissionId });
+      return res.status(502).json({ success: false, message: 'Failed to fetch file from storage' });
+    }
 
-    https.get(submission.cloudinaryUrl, (cloudRes) => {
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="submission.pdf"`);
-      cloudRes.pipe(res);
-    }).on('error', () => {
-      res.status(502).json({ success: false, message: 'Failed to fetch file from storage' });
-    });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="submission.pdf"');
+
+    const buffer = await cloudinaryRes.arrayBuffer();
+    return res.end(Buffer.from(buffer));
   } catch (err) {
     log.error('proxySubmissionFile failed', err, { submissionId });
     return res.status(500).json({ success: false, message: 'Internal server error' });

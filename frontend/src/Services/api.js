@@ -83,6 +83,9 @@ export const getAssignmentSubmissions = (assignmentId) =>
 export const assignGrades = (studentId, courseId, branchCode, rollNumber, percentage, grade) =>
   request('POST', '/grades', { studentId, courseId, branchCode, rollNumber, percentage, grade });
 
+export const getStudentsByCourse = (courseId) =>
+  request('GET', `/grades/course/${courseId}/students`);
+
 export const getFacultyQuizzes = () => request('GET', '/quiz/my');
 export const createQuiz = (data) => request('POST', '/quiz', data);
 export const setQuizVisibility = (quizId, isVisible) =>
