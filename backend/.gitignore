@@ -1,2 +1,6 @@
 node_modules/
 .env
+rag_service/.venv/
+rag_service/chroma_data/
+rag_service/**/__pycache__/
+rag_service/**/*.pyc
