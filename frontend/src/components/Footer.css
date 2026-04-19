@@ -1,118 +1,113 @@
-.app-footer {
-  width: 100%;
-  margin-top: 24px;
-  background: linear-gradient(135deg, #0d2334 0%, #17324d 42%, #0f5d53 100%);
-  color: #e8f2f0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+.footer {
+  margin-top: auto;
+  border-top: 1px solid var(--glass-border);
+  background: rgba(6, 11, 24, 0.8);
+  backdrop-filter: blur(12px);
 }
 
-.app-footer__inner {
-  max-width: 1400px;
+.footer__inner {
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 34px 22px 18px;
+  padding: 48px 24px 32px;
 }
 
-.app-footer__grid {
+.footer__grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 20px;
-  padding-bottom: 18px;
+  grid-template-columns: 1.5fr repeat(3, 1fr);
+  gap: 40px;
+  margin-bottom: 40px;
 }
 
-.app-footer__eyebrow {
-  display: inline-flex;
-  margin-bottom: 12px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(240, 178, 82, 0.18);
-  color: #ffd08f;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+@media (max-width: 900px) {
+  .footer__grid { grid-template-columns: 1fr 1fr; gap: 32px; }
 }
 
-.app-footer__block h3,
-.app-footer__block h4 {
-  margin: 0 0 10px;
-  color: #f8fbfa;
-  letter-spacing: 0.01em;
+@media (max-width: 560px) {
+  .footer__grid { grid-template-columns: 1fr; gap: 28px; }
 }
 
-.app-footer__block h3 {
+.footer__block h3 {
   font-family: "Space Grotesk", sans-serif;
-  font-size: 1.2rem;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.app-footer__block h4 {
-  font-size: 0.94rem;
+.footer__block > p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 320px;
 }
 
-.app-footer__block p {
-  margin: 0;
-  color: rgba(232, 242, 240, 0.78);
-  font-size: 0.88rem;
-  line-height: 1.55;
+.footer__block .footer__address {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
 }
 
-.app-footer__address {
-  margin-top: 14px;
-  color: rgba(232, 242, 240, 0.6);
+.footer__block h4 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 14px;
 }
 
-.app-footer__block ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
+.footer__block ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer__block li a {
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: color var(--duration-fast) var(--ease-out);
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
 }
 
-.app-footer__block a {
-  color: rgba(232, 242, 240, 0.82);
-  font-size: 0.86rem;
+.footer__block li a:hover {
+  color: var(--accent-indigo);
 }
 
-.app-footer__block a:hover {
-  color: #ffffff;
-  text-decoration: underline;
+.footer__block li a::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: background var(--duration-fast);
 }
 
-.app-footer__bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 16px;
+.footer__block li a:hover::before {
+  background: var(--accent-indigo);
+}
+
+.footer__bottom {
+  padding-top: 24px;
+  border-top: 1px solid var(--glass-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.app-footer__copy,
-.app-footer__hours {
-  margin: 0;
-  font-size: 0.8rem;
-  color: rgba(232, 242, 240, 0.6);
+.footer__copy {
+  font-size: 12px;
+  color: var(--text-dim);
 }
 
-@media (max-width: 980px) {
-  .app-footer__grid {
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .app-footer__inner {
-    padding: 22px 14px 12px;
-  }
-
-  .app-footer__grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .app-footer__bottom {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.footer__hours {
+  font-size: 12px;
+  color: var(--text-dim);
 }

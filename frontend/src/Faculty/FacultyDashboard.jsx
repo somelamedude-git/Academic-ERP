@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { getMyCourses, getFacultyCourseAssignments, getAssignmentSubmissions } from "../Services/api.js";
@@ -14,9 +14,60 @@ const quickLinks = [
   { label: "Feedback", to: "/faculty/feedback", note: "Read student feedback" },
 ];
 
+
+const todaysSchedule = [
+  { time: "09:00 AM", course: "Database Management Systems", room: "C-204" },
+  { time: "11:00 AM", course: "Operating Systems", room: "Lab-3" },
+  { time: "02:00 PM", course: "Compiler Design", room: "B-112" },
+];
+
+const recentSubmissions = [
+  { student: "Ananya Sharma", assignment: "SQL Query Optimization", status: "New" },
+  { student: "Rohit Verma", assignment: "Process Scheduling Case Study", status: "Reviewed" },
+  { student: "Sneha Patel", assignment: "Intermediate Code Generation", status: "Late" },
+];
+
+const pendingSubmissions = [
+  { id: 1, student: "Vikram Singh", assignment: "ER Diagram Assignment", due: "Yesterday" },
+  { id: 2, student: "Priya Das", assignment: "Process Scheduling Case Study", due: "Tomorrow" },
+  { id: 3, student: "Amit Kumar", assignment: "Compiler Lexical Analysis", due: "Today" },
+];
+
+const actionItems = [
+  { title: "Publish Mid-Sem Marks", deadline: "Due today" },
+  { title: "Upload Week 6 Assignment", deadline: "Due tomorrow" },
+  { title: "Approve Lab Attendance", deadline: "Pending faculty action" },
+];
+
+const announcements = [
+  { title: "Department meeting at 4:30 PM", meta: "Conference Hall" },
+  { title: "LMS maintenance window this Saturday", meta: "11:00 PM to 01:00 AM" },
+  { title: "Final year project review slots released", meta: "Check shared calendar" },
+];
+
+const performance = [
+  { course: "DBMS", completion: 72 },
+  { course: "OS", completion: 64 },
+  { course: "CD", completion: 81 },
+  { course: "ADA", completion: 58 },
+];
+
+const spotlightCards = [
+  { label: "Student Doubt Queue", value: "11", note: "Questions waiting for faculty response" },
+  { label: "Lab Utilization", value: "76%", note: "This week across scheduled sessions" },
+];
+
+const statusClassName = {
+  New: "fd-badge fd-badge--new",
+  Reviewed: "fd-badge fd-badge--reviewed",
+  Late: "fd-badge fd-badge--late",
+};
+
 const FacultyDashboard = () => {
+  const navigate = useNavigate();
+  const [remindersStatus, setRemindersStatus] = useState("idle");
   const [courses, setCourses] = useState([]);
-  const [recentSubmissions, setRecentSubmissions] = useState([]);
+  const [recentSubmissionsApi, setRecentSubmissionsApi] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +81,7 @@ const FacultyDashboard = () => {
             const assignments = aRes.assignments ?? [];
             if (assignments.length > 0) {
               const sRes = await getAssignmentSubmissions(assignments[0]._id);
-              setRecentSubmissions((sRes.submissions ?? []).slice(0, 5));
+              setRecentSubmissionsApi((sRes.submissions ?? []).slice(0, 5));
             }
           } catch { /* non-critical */ }
         }
@@ -38,6 +89,13 @@ const FacultyDashboard = () => {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const handleSendAllReminders = () => {
+    setRemindersStatus("sending");
+    setTimeout(() => {
+      setRemindersStatus("sent");
+    }, 1200);
+  };
 
   return (
     <div className="fd-page">
@@ -79,6 +137,54 @@ const FacultyDashboard = () => {
         )}
 
         <section className="fd-main-grid">
+
+          <article className="fd-card">
+            <div className="fd-card-header">
+              <h3>Today&apos;s Teaching Plan</h3>
+              <span className="fd-chip">March Schedule</span>
+            </div>
+            <ul className="fd-list">
+              {todaysSchedule.map((item) => (
+                <li key={`${item.time}-${item.course}`} className="fd-list-item">
+                  <div>
+                    <strong>{item.time}</strong>
+                    <p>{item.course}</p>
+                  </div>
+                  <span className="fd-room">{item.room}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <article className="fd-card">
+            <div className="fd-card-header">
+              <h3>Action Items</h3>
+              <span className="fd-chip fd-chip--alert">Priority</span>
+            </div>
+            <ul className="fd-list">
+              {actionItems.map((item) => (
+                <li key={item.title} className="fd-list-item">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{item.deadline}</p>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="fd-ghost-btn"
+                    onClick={() => {
+                      if (item.title === "Upload Week 6 Assignment") {
+                        navigate("/faculty/upload-assignment");
+                      }
+                    }}
+                  >
+                    Open
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+
           <article className="fd-card fd-card--wide">
             <div className="fd-card-header">
               <h3>Quick Actions</h3>
@@ -96,14 +202,62 @@ const FacultyDashboard = () => {
             </div>
           </article>
 
-          {recentSubmissions.length > 0 && (
+          <article className="fd-card fd-card--wide">
+            <div className="fd-card-header" style={{ alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <h3>Pending Submissions</h3>
+                <span className="fd-chip fd-chip--alert">Requires Action</span>
+              </div>
+              <button 
+                type="button" 
+                className="fd-ghost-btn"
+                onClick={handleSendAllReminders}
+                disabled={remindersStatus !== "idle"}
+                style={{ 
+                  color: remindersStatus === "sent" ? "#10b981" : undefined,
+                  fontSize: "13px"
+                }}
+              >
+                {remindersStatus === "sending" ? "Sending..." : remindersStatus === "sent" ? "✓ Reminded All" : "Remind All"}
+              </button>
+            </div>
+            <div className="fd-table">
+              {pendingSubmissions.map((item) => (
+                <div key={item.id} className="fd-table-row">
+                  <div>
+                    <strong>{item.student}</strong>
+                    <p>{item.assignment} • Due: {item.due}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="fd-card">
+            <div className="fd-card-header">
+              <h3>Department Updates</h3>
+              <span className="fd-chip">Noticeboard</span>
+            </div>
+            <ul className="fd-list">
+              {announcements.map((item) => (
+                <li key={item.title} className="fd-list-item">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{item.meta}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          {recentSubmissionsApi.length > 0 && (
             <article className="fd-card fd-card--wide">
               <div className="fd-card-header">
-                <h3>Recent Submissions</h3>
+                <h3>Latest API Submissions</h3>
                 <span className="fd-chip">Latest</span>
               </div>
               <div className="fd-table">
-                {recentSubmissions.map(s => (
+                {recentSubmissionsApi.map(s => (
                   <div key={s._id} className="fd-table-row">
                     <div>
                       <strong>{s.studentId?.name ?? "Student"}</strong>
