@@ -1,4 +1,4 @@
-const { Student } = require('../../models/User');
+const { Student, Faculty } = require('../../models/User');
 const Branch = require('../../models/Branch');
 const Course = require('../../models/Course');
 const Assignment = require('../../models/Assignment');
@@ -294,4 +294,36 @@ const getMyGrades = async (req, res) => {
   }
 };
 
-module.exports = { getDashboard, getMyAssignments, getMyTimetable, getMyCourses, getMyGrades };
+// GET /api/student/faculty
+// Returns faculty members teaching courses in the student's branch/semester
+const getMyFaculty = async (req, res) => {
+  const user_id = req.user_id;
+  try {
+    const student = await Student.findById(user_id).lean();
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+
+    const branchDoc = await Branch.findOne({
+      code: student.branchCode,
+      semesterNumber: student.currentSemester
+    }).populate('courses', 'facultyId name code').lean();
+
+    if (!branchDoc || !branchDoc.courses.length) {
+      return res.status(200).json({ success: true, faculty: [] });
+    }
+
+    const facultyIds = [...new Set(
+      branchDoc.courses.map(c => c.facultyId?.toString()).filter(Boolean)
+    )];
+
+    const faculty = await Faculty.find({ _id: { $in: facultyIds } })
+      .select('name email designation department_name')
+      .lean();
+
+    return res.status(200).json({ success: true, faculty });
+  } catch (err) {
+    log.error('getMyFaculty failed', err, { studentId: user_id });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+module.exports = { getDashboard, getMyAssignments, getMyTimetable, getMyCourses, getMyGrades, getMyFaculty };

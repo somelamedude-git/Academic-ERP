@@ -8,6 +8,7 @@ const submitFeedback = async (req, res) => {
   const user_id = req.user_id;
   const user_role = req.user_role;
   const { targetId, message, rating } = req.body;
+  const ratingNum = Number(rating);
 
   if (user_role !== 'Student') {
     return res.status(403).json({ success: false, message: 'Not authorized' });
@@ -18,14 +19,14 @@ const submitFeedback = async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(targetId)) {
     return res.status(400).json({ success: false, message: 'Invalid targetId' });
   }
-  if (typeof rating !== 'number' || rating < 0 || rating > 10) {
+  if (isNaN(ratingNum) || ratingNum < 0 || ratingNum > 10) {
     return res.status(400).json({ success: false, message: 'Rating must be a number between 0 and 10' });
   }
 
   try {
     await FeedbackQueue.findOneAndUpdate(
       { facultyId: targetId },
-      { $push: { stack: { studentId: user_id, message, rating } } },
+      { $push: { stack: { studentId: user_id, message, rating: ratingNum } } },
       { upsert: true, new: true }
     );
     log.info('Feedback submitted', { targetId, studentId: user_id });
@@ -39,7 +40,7 @@ const submitFeedback = async (req, res) => {
 const getFeedback = async (req, res) => {
   const user_id = req.user_id;
   const user_role = req.user_role;
-  const pageSize = parseInt(req.query.pageSize) || 5;
+  const pageSize = Math.min(parseInt(req.query.pageSize) || 5, 20);
 
   if (user_role !== 'Faculty') {
     return res.status(403).json({ success: false, message: 'Not authorized' });
@@ -48,17 +49,20 @@ const getFeedback = async (req, res) => {
   try {
     const queueDoc = await FeedbackQueue.findOne({ facultyId: user_id });
     if (!queueDoc || queueDoc.stack.length === 0) {
-      return res.status(200).json({ success: true, feedbacks: [], remaining: 0, message: 'No feedback available' });
+      return res.status(200).json({ success: true, feedbacks: [], remaining: 0, hasMore: false });
     }
 
     const stack = queueDoc.stack;
     const total = stack.length;
+
+    // Pop from the end (LIFO) — take the last `pageSize` items, newest first
     const page = stack.slice(-pageSize).reverse();
     const remaining = Math.max(0, total - pageSize);
 
+    // Remove the consumed items from the stack
     await FeedbackQueue.findOneAndUpdate(
       { facultyId: user_id },
-      { $push: { stack: { $each: [], $slice: remaining } } }
+      { $set: { stack: stack.slice(0, remaining) } }
     );
 
     return res.status(200).json({ success: true, feedbacks: page, remaining, hasMore: remaining > 0 });

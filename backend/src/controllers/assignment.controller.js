@@ -218,21 +218,31 @@ const proxySubmissionFile = async (req, res) => {
 
   try {
     const submission = await Submission.findById(submissionId).lean();
-    if (!submission || !submission.cloudinaryUrl) {
-      return res.status(404).json({ success: false, message: 'Submission file not found' });
+    if (!submission) {
+      return res.status(404).json({ success: false, message: 'Submission not found' });
     }
 
-    const cloudinaryRes = await fetch(submission.cloudinaryUrl);
-    if (!cloudinaryRes.ok) {
-      log.error('Cloudinary fetch failed', { status: cloudinaryRes.status, submissionId });
-      return res.status(502).json({ success: false, message: 'Failed to fetch file from storage' });
+    // URL submission — return the URL for the client to open
+    if (submission.submissionType === 'URL' && submission.submissionUrl) {
+      return res.status(200).json({ success: true, url: submission.submissionUrl });
     }
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename="submission.pdf"');
+    if (!submission.cloudinaryPublicId) {
+      return res.status(404).json({ success: false, message: 'No file attached to this submission' });
+    }
 
-    const buffer = await cloudinaryRes.arrayBuffer();
-    return res.end(Buffer.from(buffer));
+    // Generate a short-lived signed download URL using Cloudinary SDK
+    const signedUrl = cloudinary.utils.private_download_url(
+      submission.cloudinaryPublicId,
+      'pdf',
+      {
+        resource_type: 'raw',
+        expires_at: Math.floor(Date.now() / 1000) + 300,
+        attachment: false,
+      }
+    );
+
+    return res.status(200).json({ success: true, url: signedUrl });
   } catch (err) {
     log.error('proxySubmissionFile failed', err, { submissionId });
     return res.status(500).json({ success: false, message: 'Internal server error' });
