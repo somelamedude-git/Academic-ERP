@@ -17,9 +17,7 @@ const Footer = () => {
         { label: "Timetable", to: "/student/timetable" },
       ]
     : isFaculty
-      ? [
-          { label: "Dashboard", to: "/faculty/dashboard" },
-        ]
+      ? [{ label: "Dashboard", to: "/faculty/dashboard" }]
       : isAdmin
         ? [
             { label: "Dashboard", to: "/admin/dashboard" },
@@ -28,23 +26,19 @@ const Footer = () => {
         : [{ label: "Home", to: "/" }];
 
   return (
-    <footer className="app-footer">
-      <div className="app-footer__inner">
-        <section className="app-footer__grid" aria-label="Footer details">
-          <div className="app-footer__block">
-            <span className="app-footer__eyebrow">Campus Platform</span>
+    <footer className="footer">
+      <div className="footer__inner">
+        <section className="footer__grid">
+          <div className="footer__block">
             <h3>Academic ERP</h3>
-            <p>
-              Professional workflow support for teaching, attendance, evaluation,
-              scheduling, and student communication.
-            </p>
-            <p className="app-footer__address">
-              Indian Institute of Information Technology Gwalior, Madhya Pradesh, India
-            </p>
+            
+            <h6 className="footer__address">
+              Indian Institute of Information Technology, Gwalior
+            </h6>
           </div>
- 
-          <div className="app-footer__block">
-            <h4>Quick Links</h4>
+
+          <div className="footer__block">
+            <h4>Navigate</h4>
             <ul>
               {roleLinks.map((item) => (
                 <li key={item.to}>
@@ -54,43 +48,33 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div className="app-footer__block">
-            <h4>Help</h4>
+          <div className="footer__block">
+            <h4>Support</h4>
             <ul>
-              <li>
-                <a href="mailto:support@classroom.local">Support Email</a>
-              </li>
-              <li>
-                <a href="tel:+911234567890">Contact Desk</a>
-              </li>
-              <li>
-                <a href="#faq">FAQs</a>
-              </li>
-              <li>
-                <a href="#guides">User Guides</a>
-              </li>
+              <li><a href="mailto:support@classroom.local">Email Support</a></li>
+              <li><a href="tel:+911234567890">Contact Desk</a></li>
+              <li><a href="#faq">FAQs</a></li>
+              <li><a href="#guides">User Guides</a></li>
             </ul>
           </div>
 
-          <div className="app-footer__block">
+          <div className="footer__block">
             <h4>Legal</h4>
             <ul>
-              <li>
-                <a href="#privacy">Privacy Policy</a>
-              </li>
-              <li>
-                <a href="#terms">Terms of Use</a>
-              </li>
-              <li>
-                <a href="#security">Security</a>
-              </li>
+              <li><a href="#privacy">Privacy</a></li>
+              <li><a href="#terms">Terms</a></li>
+              <li><a href="#security">Security</a></li>
             </ul>
           </div>
         </section>
 
-        <div className="app-footer__bottom">
-          <p className="app-footer__copy">© {year} Academic ERP. Built for secure institutional use.</p>
-          <p className="app-footer__hours">Support Hours: Mon-Fri, 9:00 AM to 6:00 PM IST</p>
+        <div className="footer__bottom">
+          <p className="footer__copy">
+            © {year} Academic ERP · Institutional use only
+          </p>
+          <p className="footer__hours">
+            Support: Mon–Fri, 9 AM – 6 PM IST
+          </p>
         </div>
       </div>
     </footer>
