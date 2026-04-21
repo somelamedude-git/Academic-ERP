@@ -16,13 +16,12 @@ const openSubmissionFile = async (url) => {
       alert(err.message || `Failed to fetch file (${res.status})`);
       return;
     }
-    const blob = await res.blob();
-    if (blob.size === 0) {
-      alert("Received an empty file. Please try again.");
+    const data = await res.json();
+    if (!data.url) {
+      alert("No file URL returned.");
       return;
     }
-    const objectUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
-    window.open(objectUrl, "_blank");
+    window.open(data.url, "_blank");
   } catch {
     alert("Could not open the file. Please try again.");
   }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
-import { listFaculty, submitFeedback, submitComplaint } from "../Services/api.js";
+import { getStudentFaculty, submitFeedback, submitComplaint } from "../Services/api.js";
 import "../Styles/StudentDashboard.css";
 
 export default function FeedbackComplaint() {
@@ -16,7 +16,7 @@ export default function FeedbackComplaint() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    listFaculty()
+    getStudentFaculty()
       .then(res => setFaculty(res.faculty ?? []))
       .catch(() => {});
   }, []);
@@ -97,7 +97,15 @@ export default function FeedbackComplaint() {
               <label style={labelStyle}>Faculty
                 <select required value={feedbackForm.targetId} onChange={e => setFeedbackForm(p => ({ ...p, targetId: e.target.value }))} style={inputStyle}>
                   <option value="">-- Select Faculty --</option>
-                  {faculty.map(f => <option key={f._id} value={f._id}>{f.name} ({f.department_name})</option>)}
+                  {faculty.length === 0 ? (
+                    <option value="" disabled>No faculty found for your courses</option>
+                  ) : (
+                    faculty.map(f => (
+                      <option key={f._id} value={f._id}>
+                        {f.name} — {f.designation ?? f.department_name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </label>
               <label style={labelStyle}>Message

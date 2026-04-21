@@ -44,6 +44,7 @@ export const getStudentAssignments = () => request('GET', '/student/assignments'
 export const getStudentTimetable = () => request('GET', '/student/timetable');
 export const getStudentCourses = () => request('GET', '/student/courses');
 export const getStudentGrades = () => request('GET', '/student/grades');
+export const getStudentFaculty = () => request('GET', '/student/faculty');
 
 // ── Courses ───────────────────────────────────────────────────────────────────
 export const getCourses = () => request('GET', '/courses');

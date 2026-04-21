@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import CursorGlow from "./components/CursorGlow.jsx";
 import Home from "./Pages/Home.jsx";
 import Login from "./Pages/Login.jsx";
 import Profile from "./Pages/Profile.jsx";
@@ -28,7 +29,9 @@ const AuthGuard = () => isAuthenticated() ? null : <Navigate to="/login" replace
 
 function App() {
   return (
-    <Routes>
+    <>
+      <CursorGlow />
+      <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
 
@@ -65,6 +68,7 @@ function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
 
