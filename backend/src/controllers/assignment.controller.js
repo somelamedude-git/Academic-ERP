@@ -195,8 +195,7 @@ const getAssignmentSubmissions = async (req, res) => {
   }
 };
 
-// No longer needed — files are served directly via /uploads static route
-// Kept for backward compat with old Cloudinary submissions
+
 const proxySubmissionFile = async (req, res) => {
   const { submissionId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(submissionId)) {
