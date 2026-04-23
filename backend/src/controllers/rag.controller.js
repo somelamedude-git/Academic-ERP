@@ -10,7 +10,7 @@ const log = require('../utils/logger.utils');
 const RAG_URL = (process.env.RAG_SERVICE_URL || 'http://localhost:8010').replace(/\/$/, '');
 const RAG_API_KEY = process.env.RAG_SERVICE_API_KEY || 'change_me_internal_key';
 
-// ── Internal helper ───────────────────────────────────────────────────────────
+
 const callRAG = async (endpoint, body) => {
   const res = await fetch(`${RAG_URL}${endpoint}`, {
     method: 'POST',
@@ -26,9 +26,7 @@ const callRAG = async (endpoint, body) => {
   return res.json();
 };
 
-// ── POST /api/rag/ingest ──────────────────────────────────────────────────────
-// Faculty uploads a PDF directly from their system.
-// Multipart: file (PDF), courseId, title
+
 const ingestMaterial = async (req, res) => {
   const user_id = req.user_id;
   const { courseId, title } = req.body;
@@ -77,13 +75,12 @@ const ingestMaterial = async (req, res) => {
     log.error('RAG ingest failed', err, { courseId });
     return res.status(502).json({ success: false, message: err.message || 'RAG service unavailable' });
   } finally {
-    // Always clean up temp file
-    try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+ 
+    try { fs.unlinkSync(tmpPath); } catch {}
   }
 };
 
-// ── POST /api/rag/generate-questions ─────────────────────────────────────────
-// Body: { materialId, courseId, title, count?, questionTypes?, difficulty? }
+
 const generateQuestions = async (req, res) => {
   const {
     materialId, courseId, title,
@@ -116,7 +113,7 @@ const generateQuestions = async (req, res) => {
   }
 };
 
-// ── GET /api/rag/status ───────────────────────────────────────────────────────
+
 const getIngestStatus = async (req, res) => {
   try {
     const healthRes = await fetch(`${RAG_URL}/health`, { headers: { 'x-rag-api-key': RAG_API_KEY } });
@@ -126,7 +123,7 @@ const getIngestStatus = async (req, res) => {
   }
 };
 
-// ── POST /api/rag/query ───────────────────────────────────────────────────────
+
 const queryRAG = async (req, res) => {
   const user_id = req.user_id;
   const { quizId, question } = req.body;
