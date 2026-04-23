@@ -5,8 +5,7 @@ const { Student } = require('../../models/User');
 
 let io;
 
-// In-process cache: branchCode+semester → [facultyId strings]
-// TTL: 10 minutes. Avoids a DB hit on every socket connection.
+
 const branchFacultyCache = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -30,7 +29,6 @@ const getCachedFacultyIds = async (branchCode, semesterNumber) => {
   return facultyIds;
 };
 
-// Call this when a branch's courses change so the cache doesn't serve stale data
 const invalidateBranchCache = (branchCode, semesterNumber) => {
   branchFacultyCache.delete(`${branchCode}:${semesterNumber}`);
 };
@@ -38,7 +36,6 @@ const invalidateBranchCache = (branchCode, semesterNumber) => {
 const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: { origin: '*' },
-    // Tune connection settings for better stability
     pingTimeout: 60000,
     pingInterval: 25000,
   });
@@ -79,7 +76,6 @@ const initSocket = (httpServer) => {
           }
         }
       } catch {
-        // Non-fatal — student just won't receive quiz notifications
       }
     }
 
