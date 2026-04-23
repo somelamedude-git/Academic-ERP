@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import CursorGlow from "./components/CursorGlow.jsx";
+import TopLoader from "./components/TopLoader.jsx";
 import Home from "./Pages/Home.jsx";
 import Login from "./Pages/Login.jsx";
 import Profile from "./Pages/Profile.jsx";
@@ -25,18 +26,22 @@ import ManageTimetable from "./Admin/ManageTimetable.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { isAuthenticated } from "./auth/auth.js";
 
-const AuthGuard = () => isAuthenticated() ? null : <Navigate to="/login" replace />;
+// Simple wrapper — redirects to login if not authenticated
+function RequireAuth({ children }) {
+  return isAuthenticated() ? children : <Navigate to="/login" replace />;
+}
 
 function App() {
   return (
     <>
       <CursorGlow />
+      <TopLoader />
       <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
 
      
-      <Route path="/profile" element={<><AuthGuard /><Profile /></>} />
+      <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
 
       <Route element={<ProtectedRoute allowedRole="student" />}>
         <Route path="/student/dashboard" element={<StudentDashBoard />} />

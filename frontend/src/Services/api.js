@@ -45,6 +45,7 @@ export const getStudentTimetable = () => request('GET', '/student/timetable');
 export const getStudentCourses = () => request('GET', '/student/courses');
 export const getStudentGrades = () => request('GET', '/student/grades');
 export const getStudentFaculty = () => request('GET', '/student/faculty');
+export const getStudentTimetablePDFs = () => request('GET', '/student/timetable-pdfs');
 
 // ── Courses ───────────────────────────────────────────────────────────────────
 export const getCourses = () => request('GET', '/courses');
@@ -95,6 +96,16 @@ export const expireQuiz = (quizId) => request('PATCH', `/quiz/${quizId}/expire`,
 export const getQuizSubmissions = (quizId) => request('GET', `/quiz/submissions?quizId=${quizId}`);
 export const reviewAndDeleteSubmission = (submissionId) =>
   request('DELETE', `/quiz/submission/${submissionId}/reviewed`);
+
+// ── RAG ───────────────────────────────────────────────────────────────────────
+export const ragIngest = (materialId) =>
+  request('POST', '/rag/ingest', { materialId });
+export const ragGenerateQuestions = (materialId, count = 5) =>
+  request('POST', '/rag/generate-questions', { materialId, count });
+export const ragGetStatus = (materialId) =>
+  request('GET', `/rag/status/${materialId}`);
+export const ragQuery = (quizId, question) =>
+  request('POST', '/rag/query', { quizId, question });
 
 export const getMyFeedback = (pageSize = 5) => request('GET', `/feedback?pageSize=${pageSize}`);
 

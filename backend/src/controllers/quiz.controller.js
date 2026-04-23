@@ -138,9 +138,38 @@ const getSubmissions = async (req, res) => {
   }
 
   try {
-    const submissions = await QuizSubmission.find({ quizId })
-      .populate('studentId', 'name enrollmentNo').lean();
-    return res.status(200).json({ success: true, submissions });
+    const [quiz, submissions] = await Promise.all([
+      Quiz.findById(quizId).lean(),
+      QuizSubmission.find({ quizId }).populate('studentId', 'name enrollmentNo').lean(),
+    ]);
+
+    const result = submissions.map(s => {
+      // Annotate each answer with correct/wrong
+      const gradedAnswers = (s.answers ?? []).map(a => {
+        const question = quiz?.questions?.find(q => q._id.toString() === a.questionId?.toString());
+        const isCorrect = question && question.correctAnswer &&
+          a.answerText?.trim().toLowerCase() === question.correctAnswer.trim().toLowerCase();
+        return {
+          questionId: a.questionId,
+          questionText: question?.questionText ?? '—',
+          answerText: a.answerText,
+          correctAnswer: question?.correctAnswer ?? '—',
+          isCorrect: Boolean(isCorrect),
+        };
+      });
+
+      return {
+        _id: s._id,
+        studentId: s.studentId,
+        score: s.score ?? 0,
+        totalMarks: s.totalMarks ?? quiz?.questions?.length ?? 0,
+        percentage: (s.totalMarks ?? 0) > 0 ? Math.round(((s.score ?? 0) / s.totalMarks) * 100) : 0,
+        answers: gradedAnswers,
+        submittedAt: s.createdAt,
+      };
+    });
+
+    return res.status(200).json({ success: true, submissions: result, quizTitle: quiz?.title ?? '' });
   } catch (err) {
     log.error('getSubmissions failed', err, { quizId });
     return res.status(500).json({ success: false, message: 'Internal server error' });
@@ -216,10 +245,39 @@ const submitQuiz = async (req, res) => {
       return res.status(400).json({ success: false, message: 'This quiz is external — no submission needed' });
     }
 
-    const submission = new QuizSubmission({ quizId, studentId: user_id, answers });
+    // Auto-grade: compare each answer to correctAnswer
+    const totalMarks = quiz.questions.length;
+    let score = 0;
+    const gradedAnswers = answers.map(a => {
+      const question = quiz.questions.find(q => q._id.toString() === a.questionId?.toString());
+      const isCorrect = question && question.correctAnswer &&
+        a.answerText?.trim().toLowerCase() === question.correctAnswer.trim().toLowerCase();
+      if (isCorrect) score++;
+      return { questionId: a.questionId, answerText: a.answerText };
+    });
+
+    const submission = new QuizSubmission({ quizId, studentId: user_id, answers: gradedAnswers, score, totalMarks });
     await submission.save();
-    log.info('Quiz submitted', { quizId, studentId: user_id });
-    return res.status(201).json({ success: true, message: 'Quiz submitted successfully' });
+    log.info('Quiz submitted', { quizId, studentId: user_id, score, totalMarks });
+
+    // Return result immediately to student
+    const resultDetails = quiz.questions.map(q => {
+      const studentAnswer = gradedAnswers.find(a => a.questionId?.toString() === q._id.toString());
+      const isCorrect = studentAnswer && q.correctAnswer &&
+        studentAnswer.answerText?.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+      return {
+        questionText: q.questionText,
+        yourAnswer: studentAnswer?.answerText ?? null,
+        correctAnswer: q.correctAnswer,
+        isCorrect: Boolean(isCorrect),
+      };
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Quiz submitted successfully',
+      result: { score, totalMarks, percentage: totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0, details: resultDetails },
+    });
   } catch (err) {
     if (err.code === 11000) {
       return res.status(400).json({ success: false, message: 'You have already submitted this quiz' });

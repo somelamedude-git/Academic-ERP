@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, requireRole } = require('../middleware/auth.middleware');
-const { uploadAssignment, uploadSubmission } = require('../utils/cloudinary.utils');
+const { uploadAssignment, uploadSubmission } = require('../utils/storage.utils');
 const { createAssignment, deleteAssignment, getCourseAssignments, submitAssignment, getAssignmentSubmissions, proxySubmissionFile } = require('../controllers/assignment.controller');
 
 router.use(authenticate);

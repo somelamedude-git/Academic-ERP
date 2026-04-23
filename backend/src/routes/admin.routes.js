@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, requireRole } = require('../middleware/auth.middleware');
-const { uploadPDF } = require('../utils/cloudinary.utils');
+const { uploadPDF } = require('../utils/storage.utils');
 const {
   addStudent, removeStudent, listStudents,
   addFaculty, removeFaculty, listFaculty,

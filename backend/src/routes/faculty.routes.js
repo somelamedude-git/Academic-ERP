@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, requireRole } = require('../middleware/auth.middleware');
-const { uploadMaterial } = require('../utils/cloudinary.utils');
+const { uploadMaterial } = require('../utils/storage.utils');
 const { uploadMaterial: uploadMaterialCtrl, addExternalLink, getMaterials, deleteMaterial, getMyCourses } = require('../controllers/faculty.controller');
 
 router.use(authenticate);

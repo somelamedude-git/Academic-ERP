@@ -2,7 +2,7 @@ const Assignment = require('../../models/Assignment');
 const Submission = require('../../models/Submission');
 const Branch = require('../../models/Branch');
 const { Student } = require('../../models/User');
-const { cloudinary, getSignedUrl, getPublicUrl } = require('../utils/cloudinary.utils');
+const { fileUrl, deleteFile } = require('../utils/storage.utils');
 const mongoose = require('mongoose');
 const log = require('../utils/logger.utils');
 
@@ -24,7 +24,7 @@ const createAssignment = async (req, res) => {
   let type, resourceUrl, cloudinaryPublicId;
   if (req.file) {
     type = 'File';
-    resourceUrl = req.file.path;
+    resourceUrl = fileUrl('assignments', req.file.filename);
     cloudinaryPublicId = req.file.filename;
   } else if (req.body.resourceUrl) {
     type = 'URL';
@@ -65,7 +65,7 @@ const deleteAssignment = async (req, res) => {
       return res.status(403).json({ success: false, message: 'You can only delete your own assignments' });
     }
     if (assignment.cloudinaryPublicId) {
-      await cloudinary.uploader.destroy(assignment.cloudinaryPublicId, { resource_type: 'raw' });
+      deleteFile('assignments', assignment.cloudinaryPublicId);
     }
     await Assignment.findByIdAndDelete(assignmentId);
     log.info('Assignment deleted', { assignmentId, facultyId: user_id });
@@ -88,9 +88,7 @@ const getCourseAssignments = async (req, res) => {
   try {
     if (user_role === 'Student') {
       const student = await Student.findById(user_id).lean();
-      if (!student) {
-        return res.status(404).json({ success: false, message: 'Student not found' });
-      }
+      if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
       const branchDoc = await Branch.findOne({ code: student.branchCode, semesterNumber: student.currentSemester }).lean();
       if (!branchDoc || !branchDoc.courses.map(id => id.toString()).includes(courseId)) {
         return res.status(403).json({ success: false, message: 'This course is not part of your branch and semester' });
@@ -134,9 +132,7 @@ const submitAssignment = async (req, res) => {
 
   try {
     const assignment = await Assignment.findById(assignmentId);
-    if (!assignment) {
-      return res.status(404).json({ success: false, message: 'Assignment not found' });
-    }
+    if (!assignment) return res.status(404).json({ success: false, message: 'Assignment not found' });
     if (assignment.dueDate && new Date() > assignment.dueDate) {
       return res.status(400).json({ success: false, message: 'Assignment deadline has passed' });
     }
@@ -148,7 +144,7 @@ const submitAssignment = async (req, res) => {
     };
 
     if (hasFile) {
-      submissionData.cloudinaryUrl = req.file.path;
+      submissionData.cloudinaryUrl = fileUrl('submissions', req.file.filename);
       submissionData.cloudinaryPublicId = req.file.filename;
     } else {
       submissionData.submissionUrl = submissionUrl;
@@ -183,20 +179,14 @@ const getAssignmentSubmissions = async (req, res) => {
       .populate('studentId', 'name enrollmentNo')
       .lean();
 
-    const result = submissions.map(s => {
-      let viewUrl = s.submissionUrl ?? null;
-      if (s.cloudinaryPublicId) {
-        // Proxy through our backend to avoid Cloudinary access restrictions
-        viewUrl = `/api/assignments/submission-file/${s._id}`;
-      }
-      return {
-        _id: s._id,
-        studentId: s.studentId,
-        submissionType: s.submissionType ?? 'File',
-        viewUrl,
-        createdAt: s.createdAt,
-      };
-    });
+    const result = submissions.map(s => ({
+      _id: s._id,
+      studentId: s.studentId,
+      submissionType: s.submissionType ?? 'File',
+      // Local files are served directly via /uploads/; URL submissions open as-is
+      viewUrl: s.submissionType === 'URL' ? s.submissionUrl : (s.cloudinaryUrl ?? null),
+      createdAt: s.createdAt,
+    }));
 
     return res.status(200).json({ success: true, submissions: result });
   } catch (err) {
@@ -205,46 +195,21 @@ const getAssignmentSubmissions = async (req, res) => {
   }
 };
 
+// No longer needed — files are served directly via /uploads static route
+// Kept for backward compat with old Cloudinary submissions
 const proxySubmissionFile = async (req, res) => {
-  const user_role = req.user_role;
   const { submissionId } = req.params;
-
-  if (user_role !== 'Faculty' && user_role !== 'Admin') {
-    return res.status(403).json({ success: false, message: 'Not authorized' });
-  }
   if (!mongoose.Types.ObjectId.isValid(submissionId)) {
     return res.status(400).json({ success: false, message: 'Invalid submissionId' });
   }
-
   try {
     const submission = await Submission.findById(submissionId).lean();
-    if (!submission) {
-      return res.status(404).json({ success: false, message: 'Submission not found' });
-    }
-
-    // URL submission — return the URL for the client to open
-    if (submission.submissionType === 'URL' && submission.submissionUrl) {
-      return res.status(200).json({ success: true, url: submission.submissionUrl });
-    }
-
-    if (!submission.cloudinaryPublicId) {
-      return res.status(404).json({ success: false, message: 'No file attached to this submission' });
-    }
-
-    // Generate a short-lived signed download URL using Cloudinary SDK
-    const signedUrl = cloudinary.utils.private_download_url(
-      submission.cloudinaryPublicId,
-      'pdf',
-      {
-        resource_type: 'raw',
-        expires_at: Math.floor(Date.now() / 1000) + 300,
-        attachment: false,
-      }
-    );
-
-    return res.status(200).json({ success: true, url: signedUrl });
+    if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
+    const url = submission.submissionType === 'URL'
+      ? submission.submissionUrl
+      : submission.cloudinaryUrl;
+    return res.status(200).json({ success: true, url: url ?? null });
   } catch (err) {
-    log.error('proxySubmissionFile failed', err, { submissionId });
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import "../Styles/Timetable.css";
-import { getStudentTimetable } from "../Services/api.js";
+import { getStudentTimetable, getStudentTimetablePDFs } from "../Services/api.js";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const FALLBACK_START_HOUR = 8;
@@ -10,11 +10,16 @@ const FALLBACK_END_HOUR = 18;
 const HOUR_HEIGHT = 72;
 
 const Timetable = () => {
+  const [activeTab, setActiveTab] = useState("pdfs"); // "pdfs" | "schedule"
   const [timetable, setTimetable] = useState({});
   const [other, setOther] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [weekOffset, setWeekOffset] = useState(0);
+
+  // PDF timetables
+  const [pdfs, setPdfs] = useState([]);
+  const [pdfsLoading, setPdfsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -50,6 +55,14 @@ const Timetable = () => {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  // Load PDF timetables
+  useEffect(() => {
+    getStudentTimetablePDFs()
+      .then(res => setPdfs(res.timetables ?? []))
+      .catch(() => setPdfs([]))
+      .finally(() => setPdfsLoading(false));
   }, []);
 
   const normalizedEvents = useMemo(() => {
@@ -140,121 +153,190 @@ const Timetable = () => {
       <main className="tt-container">
         <header className="tt-header">
           <div>
-            <h1>Calendar</h1>
-            <p>Weekly class schedule</p>
+            <h1>Timetable</h1>
+            <p>View your schedule and uploaded timetable PDFs.</p>
           </div>
           <div className="tt-header-controls">
+            {/* Tab switcher */}
             <div className="tt-nav-group">
-              <button type="button" className="tt-nav-btn" onClick={() => setWeekOffset((prev) => prev - 1)}>
-                Prev
+              <button
+                type="button"
+                className={`tt-nav-btn ${activeTab === "pdfs" ? "tt-nav-btn--today" : ""}`}
+                onClick={() => setActiveTab("pdfs")}
+              >
+                PDF Timetables
               </button>
-              <button type="button" className="tt-nav-btn tt-nav-btn--today" onClick={() => setWeekOffset(0)}>
-                Today
-              </button>
-              <button type="button" className="tt-nav-btn" onClick={() => setWeekOffset((prev) => prev + 1)}>
-                Next
+              <button
+                type="button"
+                className={`tt-nav-btn ${activeTab === "schedule" ? "tt-nav-btn--today" : ""}`}
+                onClick={() => setActiveTab("schedule")}
+              >
+                Schedule
               </button>
             </div>
-            <div className="tt-view-badge">{weekRangeLabel}</div>
           </div>
         </header>
 
-        {loading && <p className="tt-muted">Loading timetable...</p>}
-        {!loading && error && <p className="tt-error">{error}</p>}
-
-        {!loading && !error && (
-          <>
-            <section className="tt-calendar-shell" aria-label="Weekly timetable calendar">
-              <div className="tt-calendar-header-row">
-                <div className="tt-time-header">Time</div>
-                <div className="tt-day-headers">
-                  {DAYS.map((day, index) => (
-                    <div
-                      key={day}
-                      className={`tt-day-header-cell ${isCurrentWeek && index === todayIndex ? "tt-day-header-cell--today" : ""}`}
-                    >
-                      {day.slice(0, 3)}
-                      <span>{visibleDates[index].getDate()}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="tt-calendar-body" style={{ height: `${totalHeight}px` }}>
-                <div className="tt-time-column">
-                  {hours.map((hour) => (
-                    <div key={hour} className="tt-time-slot" style={{ height: `${HOUR_HEIGHT}px` }}>
-                      <span>{formatHour(hour)}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="tt-day-grid">
-                  {DAYS.map((day) => {
-                    const dayEvents = normalizedEvents.filter((event) => event.day === day);
-                    const dayIndex = DAYS.indexOf(day);
-                    const todayClass = isCurrentWeek && dayIndex === todayIndex ? "tt-day-column--today" : "";
-
-                    return (
-                      <div key={day} className={`tt-day-column ${todayClass}`}>
-                        {hours.slice(0, -1).map((hour) => (
-                          <div key={`${day}-${hour}`} className="tt-hour-line" style={{ top: `${(hour - startHour) * HOUR_HEIGHT}px` }} />
-                        ))}
-
-                        {dayEvents.map((event) => {
-                          const top = ((event.startMinute / 60) - startHour) * HOUR_HEIGHT;
-                          const height = Math.max(((event.endMinute - event.startMinute) / 60) * HOUR_HEIGHT, 44);
-
-                          return (
-                            <article
-                              key={event.key}
-                              className="tt-event"
-                              style={{ top: `${top}px`, height: `${height}px` }}
-                            >
-                              <p className="tt-event-time">{event.rawTime || `${formatHour(event.startMinute / 60)} - ${formatHour(event.endMinute / 60)}`}</p>
-                              <h4>{event.course}</h4>
-                              <span>{event.room}</span>
-                              <p className="tt-event-attendance">Attendance: {event.attendance}</p>
-                            </article>
-                          );
-                        })}
+        {/* ── PDF Timetables tab ── */}
+        {activeTab === "pdfs" && (
+          <section style={{ marginTop: "8px" }}>
+            {pdfsLoading && <p className="tt-muted">Loading timetables...</p>}
+            {!pdfsLoading && pdfs.length === 0 && (
+              <p className="tt-muted">No timetable PDFs uploaded yet. Check back later.</p>
+            )}
+            {!pdfsLoading && pdfs.length > 0 && (
+              <div style={{ display: "grid", gap: "12px" }}>
+                {pdfs.map(t => (
+                  <div
+                    key={t._id}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "18px 22px",
+                      background: "var(--glass)", backdropFilter: "blur(14px)",
+                      border: "1px solid var(--glass-border)", borderRadius: "var(--radius-md)",
+                      transition: "all var(--duration-normal) var(--ease-out)",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                      <div style={{
+                        width: "40px", height: "40px", borderRadius: "var(--radius-sm)",
+                        background: "var(--danger-soft)", display: "grid", placeItems: "center", flexShrink: 0,
+                      }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
                       </div>
+                      <div>
+                        <strong style={{ color: "var(--text-primary)", fontSize: "14px" }}>
+                          {t.originalName || "Timetable.pdf"}
+                        </strong>
+                        <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>
+                          Uploaded {new Date(t.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                      </div>
+                    </div>
+                    <a
+                      href={t.cloudinaryUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: "6px",
+                        padding: "8px 18px", borderRadius: "var(--radius-sm)",
+                        background: "var(--accent-indigo)", color: "#fff",
+                        fontWeight: 700, fontSize: "13px", textDecoration: "none",
+                        boxShadow: "0 0 16px rgba(99,102,241,0.25)",
+                        transition: "background var(--duration-normal)",
+                      }}
+                    >
+                      Open PDF
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                      </svg>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ── Schedule tab ── */}
+        {activeTab === "schedule" && (
+          <>
+            <div className="tt-header-controls" style={{ marginBottom: "16px" }}>
+              <div className="tt-nav-group">
+                <button type="button" className="tt-nav-btn" onClick={() => setWeekOffset((prev) => prev - 1)}>Prev</button>
+                <button type="button" className="tt-nav-btn tt-nav-btn--today" onClick={() => setWeekOffset(0)}>Today</button>
+                <button type="button" className="tt-nav-btn" onClick={() => setWeekOffset((prev) => prev + 1)}>Next</button>
+              </div>
+              <div className="tt-view-badge">{weekRangeLabel}</div>
+            </div>
+
+            {loading && <p className="tt-muted">Loading schedule...</p>}
+            {!loading && error && <p className="tt-error">{error}</p>}
+            {!loading && !error && (
+              <>
+                <section className="tt-calendar-shell" aria-label="Weekly timetable calendar">
+                  <div className="tt-calendar-header-row">
+                    <div className="tt-time-header">Time</div>
+                    <div className="tt-day-headers">
+                      {DAYS.map((day, index) => (
+                        <div key={day} className={`tt-day-header-cell ${isCurrentWeek && index === todayIndex ? "tt-day-header-cell--today" : ""}`}>
+                          {day.slice(0, 3)}
+                          <span>{visibleDates[index].getDate()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="tt-calendar-body" style={{ height: `${totalHeight}px` }}>
+                    <div className="tt-time-column">
+                      {hours.map((hour) => (
+                        <div key={hour} className="tt-time-slot" style={{ height: `${HOUR_HEIGHT}px` }}>
+                          <span>{formatHour(hour)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="tt-day-grid">
+                      {DAYS.map((day) => {
+                        const dayEvents = normalizedEvents.filter((event) => event.day === day);
+                        const dayIndex = DAYS.indexOf(day);
+                        const todayClass = isCurrentWeek && dayIndex === todayIndex ? "tt-day-column--today" : "";
+                        return (
+                          <div key={day} className={`tt-day-column ${todayClass}`}>
+                            {hours.slice(0, -1).map((hour) => (
+                              <div key={`${day}-${hour}`} className="tt-hour-line" style={{ top: `${(hour - startHour) * HOUR_HEIGHT}px` }} />
+                            ))}
+                            {dayEvents.map((event) => {
+                              const top = ((event.startMinute / 60) - startHour) * HOUR_HEIGHT;
+                              const height = Math.max(((event.endMinute - event.startMinute) / 60) * HOUR_HEIGHT, 44);
+                              return (
+                                <article key={event.key} className="tt-event" style={{ top: `${top}px`, height: `${height}px` }}>
+                                  <p className="tt-event-time">{event.rawTime || `${formatHour(event.startMinute / 60)} - ${formatHour(event.endMinute / 60)}`}</p>
+                                  <h4>{event.course}</h4>
+                                  <span>{event.room}</span>
+                                  <p className="tt-event-attendance">Attendance: {event.attendance}</p>
+                                </article>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="tt-mobile-list" aria-label="Weekly list view">
+                  {DAYS.map((day, index) => {
+                    const dayEvents = normalizedEvents.filter((event) => event.day === day);
+                    return (
+                      <article key={`mobile-${day}`} className={`tt-mobile-day-card ${isCurrentWeek && index === todayIndex ? "tt-mobile-day-card--today" : ""}`}>
+                        <h3>
+                          {day}
+                          <span>{visibleDates[index].toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                        </h3>
+                        {dayEvents.length === 0 ? (
+                          <p className="tt-empty">No classes scheduled.</p>
+                        ) : (
+                          <ul>
+                            {dayEvents.map((event) => (
+                              <li key={`mobile-${event.key}`}>
+                                <strong>{event.rawTime || `${formatHour(event.startMinute / 60)} - ${formatHour(event.endMinute / 60)}`}</strong>
+                                <p>{event.course}</p>
+                                <span>{event.room}</span>
+                                <small className="tt-mobile-attendance">Attendance: {event.attendance}</small>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </article>
                     );
                   })}
-                </div>
-              </div>
-            </section>
-
-            <section className="tt-mobile-list" aria-label="Weekly list view">
-              {DAYS.map((day, index) => {
-                const dayEvents = normalizedEvents.filter((event) => event.day === day);
-                return (
-                  <article
-                    key={`mobile-${day}`}
-                    className={`tt-mobile-day-card ${isCurrentWeek && index === todayIndex ? "tt-mobile-day-card--today" : ""}`}
-                  >
-                    <h3>
-                      {day}
-                      <span>{visibleDates[index].toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                    </h3>
-                    {dayEvents.length === 0 ? (
-                      <p className="tt-empty">No classes scheduled.</p>
-                    ) : (
-                      <ul>
-                        {dayEvents.map((event) => (
-                          <li key={`mobile-${event.key}`}>
-                            <strong>{event.rawTime || `${formatHour(event.startMinute / 60)} - ${formatHour(event.endMinute / 60)}`}</strong>
-                            <p>{event.course}</p>
-                            <span>{event.room}</span>
-                            <small className="tt-mobile-attendance">Attendance: {event.attendance}</small>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </article>
-                );
-              })}
-            </section>
+                </section>
+              </>
+            )}
           </>
         )}
       </main>

@@ -2,7 +2,7 @@ const { Student, Faculty, User } = require('../../models/User');
 const Branch = require('../../models/Branch');
 const FinalGrade = require('../../models/FinalGrade');
 const TimetablePDF = require('../../models/TimetablePDF');
-const { cloudinary } = require('../utils/cloudinary.utils');
+const { fileUrl, deleteFile } = require('../utils/storage.utils');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const log = require('../utils/logger.utils');
@@ -110,7 +110,7 @@ const uploadTimetable = async (req, res) => {
   try {
     const timetable = new TimetablePDF({
       uploadedBy: user_id,
-      cloudinaryUrl: req.file.path,
+      cloudinaryUrl: fileUrl('timetables', req.file.filename),
       cloudinaryPublicId: req.file.filename,
       originalName: req.file.originalname
     });
@@ -149,7 +149,7 @@ const deleteTimetable = async (req, res) => {
     if (!timetable) {
       return res.status(404).json({ success: false, message: 'Timetable not found' });
     }
-    await cloudinary.uploader.destroy(timetable.cloudinaryPublicId, { resource_type: 'raw' });
+    deleteFile('timetables', timetable.cloudinaryPublicId);
     await TimetablePDF.findByIdAndDelete(timetableId);
     log.info('Timetable deleted', { timetableId });
     return res.status(200).json({ success: true, message: 'Timetable deleted successfully' });

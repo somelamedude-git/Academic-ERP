@@ -2,6 +2,7 @@ const { Student, Faculty } = require('../../models/User');
 const Branch = require('../../models/Branch');
 const Course = require('../../models/Course');
 const Assignment = require('../../models/Assignment');
+const TimetablePDF = require('../../models/TimetablePDF');
 const Submission = require('../../models/Submission');
 const Attendance = require('../../models/Attendance');
 const FinalGrade = require('../../models/FinalGrade');
@@ -326,4 +327,16 @@ const getMyFaculty = async (req, res) => {
   }
 };
 
-module.exports = { getDashboard, getMyAssignments, getMyTimetable, getMyCourses, getMyGrades, getMyFaculty };
+// GET /api/student/timetable-pdfs
+const getTimetablePDFs = async (req, res) => {
+  try {
+    const TimetablePDF = require('../../models/TimetablePDF');
+    const pdfs = await TimetablePDF.find().sort({ createdAt: -1 }).lean();
+    return res.status(200).json({ success: true, timetables: pdfs });
+  } catch (err) {
+    log.error('getTimetablePDFs failed', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+module.exports = { getDashboard, getMyAssignments, getMyTimetable, getMyCourses, getMyGrades, getMyFaculty, getTimetablePDFs };

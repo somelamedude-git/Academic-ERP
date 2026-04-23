@@ -1,9 +1,11 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const { initSocket } = require('./src/utils/socket.utils');
+const { UPLOAD_ROOT } = require('./src/utils/storage.utils');
 
 dotenv.config();
 
@@ -14,6 +16,9 @@ connectDB();
 initSocket(server);
 
 app.use(express.json({ limit: '10mb' }));
+
+// Serve uploaded files
+app.use('/uploads', express.static(UPLOAD_ROOT));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -54,6 +59,7 @@ app.use('/api/assignments', require('./src/routes/assignment.routes'));
 app.use('/api/attendance', require('./src/routes/attendance.routes'));
 app.use('/api/grades', require('./src/routes/grades.routes'));
 app.use('/api/quiz', require('./src/routes/quiz.routes'));
+app.use('/api/rag', require('./src/routes/rag.routes'));
 app.use('/api', require('./src/routes/feedback.routes'));
 
 const PORT = process.env.PORT || 5000;

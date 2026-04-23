@@ -1,6 +1,6 @@
 const CourseMaterial = require('../../models/CourseMaterial');
 const Course = require('../../models/Course');
-const { cloudinary } = require('../utils/cloudinary.utils');
+const { fileUrl, deleteFile } = require('../utils/storage.utils');
 const mongoose = require('mongoose');
 const log = require('../utils/logger.utils');
 
@@ -29,7 +29,7 @@ const uploadMaterial = async (req, res) => {
       courseId,
       title,
       type: isPPT ? 'PPT' : 'PDF',
-      cloudinaryUrl: req.file.path,
+      cloudinaryUrl: fileUrl('materials', req.file.filename),
       cloudinaryPublicId: req.file.filename,
       originalName: req.file.originalname
     });
@@ -112,7 +112,7 @@ const deleteMaterial = async (req, res) => {
       return res.status(403).json({ success: false, message: 'You can only delete your own materials' });
     }
     if (material.cloudinaryPublicId) {
-      await cloudinary.uploader.destroy(material.cloudinaryPublicId, { resource_type: 'raw' });
+      deleteFile('materials', material.cloudinaryPublicId);
     }
     await CourseMaterial.findByIdAndDelete(materialId);
     log.info('Material deleted', { materialId, facultyId: user_id });

@@ -8,9 +8,12 @@ from llama_index.core import StorageContext, VectorStoreIndex
 
 
 def _safe_collection_name(course_id: str, material_id: str) -> str:
-    raw = f"course_{course_id}_material_{material_id}".lower()
-    cleaned = re.sub(r"[^a-z0-9_]", "_", raw)
-    return cleaned[:120]
+    raw = f"c{course_id[-8:]}_m{material_id[-8:]}".lower()
+    cleaned = re.sub(r"[^a-z0-9_-]", "_", raw)
+    # Ensure starts and ends with alphanumeric
+    cleaned = re.sub(r"^[^a-z0-9]+", "", cleaned)
+    cleaned = re.sub(r"[^a-z0-9]+$", "", cleaned)
+    return cleaned[:63] or "default_collection"
 
 
 class ChromaStore:

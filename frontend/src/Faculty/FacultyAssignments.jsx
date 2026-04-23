@@ -2,30 +2,7 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { getMyCourses, getFacultyCourseAssignments, createAssignmentUrl, deleteAssignment, getAssignmentSubmissions } from "../Services/api.js";
-import { getStoredAuth } from "../auth/auth.js";
 import "../Styles/Faculty.css";
-
-const openSubmissionFile = async (url) => {
-  try {
-    const auth = getStoredAuth();
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${auth?.accessToken}` },
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      alert(err.message || `Failed to fetch file (${res.status})`);
-      return;
-    }
-    const data = await res.json();
-    if (!data.url) {
-      alert("No file URL returned.");
-      return;
-    }
-    window.open(data.url, "_blank");
-  } catch {
-    alert("Could not open the file. Please try again.");
-  }
-};
 
 const emptyForm = { title: "", description: "", dueDate: "", resourceUrl: "", courseId: "" };
 
@@ -199,7 +176,7 @@ export default function FacultyAssignments() {
                               s.submissionType === "URL" ? (
                                 <a href={s.viewUrl} target="_blank" rel="noreferrer" className="fc-btn fc-btn--ghost" style={{ padding: "5px 12px", fontSize: "0.8rem" }}>Open Link</a>
                               ) : (
-                                <button className="fc-btn fc-btn--ghost" style={{ padding: "5px 12px", fontSize: "0.8rem" }} onClick={() => openSubmissionFile(s.viewUrl)}>Open PDF</button>
+                                <a href={s.viewUrl} target="_blank" rel="noreferrer" className="fc-btn fc-btn--ghost" style={{ padding: "5px 12px", fontSize: "0.8rem" }}>Open PDF</a>
                               )
                             ) : (
                               <span style={{ color: "#6b7280", fontSize: "0.82rem" }}>No file</span>
