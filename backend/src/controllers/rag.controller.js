@@ -41,12 +41,11 @@ const ingestMaterial = async (req, res) => {
     return res.status(400).json({ success: false, message: 'title is required' });
   }
 
-  // Save uploaded buffer to a temp file
+  
   const tmpPath = path.join(os.tmpdir(), `rag_${Date.now()}_${req.file.originalname}`);
   try {
     fs.writeFileSync(tmpPath, req.file.buffer);
 
-    // Generate a short unique material_id (max 63 chars, alphanumeric + hyphens)
     const shortId = crypto
       .createHash('sha1')
       .update(`${user_id}_${courseId}_${Date.now()}`)
